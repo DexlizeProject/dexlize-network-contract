@@ -1,15 +1,21 @@
 /**
  *  @file
- *  @copyright defined in BitProtal/LICENSE.txt
+ *  @copyright defined in Dexlize/LICENSE.txt
  */
 #pragma once
 
 #include <eosiolib/eosio.hpp>
 #include <eosiolib/asset.hpp>
 
-namespace proxy {
-    class proxy : public contract {
+using namespace eosio;
+using namespace std;
+
+namespace Dexlize {
+    class Proxy : public contract {
         public:
-        proxy() {}
-    }
-}
+        Proxy(account_name self) : contract(self) {};
+
+        private:
+
+    };
+};

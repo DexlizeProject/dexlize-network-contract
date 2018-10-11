@@ -8,12 +8,17 @@
 #include <eosiolib/asset.hpp>
 #include <eosiolib/action.hpp>
 
-#define TARGET_CONTRACT N(tokendapppub)
-
 using namespace eosio;
 using namespace std;
 
-const account_name GOD_ACCOUNT = N(eostestbp121);
+#define SN(X) (string_to_symbol(0, #X) >> 8)
+#define PUB_SYMBOL_NAME SN(PUB)
+#define TPT_SYMBOL_NAME SN(TPT)
+#define KBY_SYMBOL_NAME SN(KBY)
+
+#define GOD_ACCOUNT "eostestbp121"
+#define DAP_CONTRACT N(tokendapppub)
+#define KBY_CONTRACT N(myeosgroupon)
 
 namespace Dexlize {
     class Proxy : public contract {
@@ -25,8 +30,8 @@ namespace Dexlize {
         void convert();
 
         private:
-        symbol_name _string_to_symbol_name(const char* str);
-        map<string, string> _parseMemo(string memo);
+        symbol_name _string_to_symbol_name(const string& str);
+        symbol_name _getSymbolName(const string& memo);
     };
 };
 

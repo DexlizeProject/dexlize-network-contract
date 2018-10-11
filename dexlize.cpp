@@ -3,16 +3,24 @@
  *  @copyright defined in Dexlize/LICENSE
  */
 #include "dexlize.hpp"
+#include "utils.hpp"
 
-symbol_name Dexlize::Proxy::_string_to_symbol_name(const char* str)
+symbol_name Dexlize::Proxy::_string_to_symbol_name(const string& str)
 {
-    return string_to_symbol(0, str) >> 8;
+    return string_to_symbol(0, str.c_str()) >> 8;
 }
 
-map<string, string> Dexlize::Proxy::_parseMemo(string memo)
+symbol_name Dexlize::Proxy::_getSymbolName(const string& memo)
 {
-    map<string, string> memoMap;
-    return memoMap;
+    Utils utils;
+    map<string, string> memoMap = utils.parseJson(memo);
+
+    auto iter = memoMap.find("symbol");
+    if (iter != memoMap.end()) 
+    {
+        return _string_to_symbol_name(iter->second);
+    }
+    eosio_assert(iter == memoMap.end(), "invalid memo format for symbol");
 }
 
 /**
@@ -28,20 +36,35 @@ void Dexlize::Proxy::buy(account_name from, account_name to, asset quantity, str
 {
     // check if the account name is correct.
     // from account cannot be owner and to account must be owner.
-    if (from == _self || to != _self)
-    {
-        return;
-    }
+    if (from == _self || to != _self) return;
     eosio_assert(quantity.symbol == CORE_SYMBOL, "must pay with CORE token");
 
-    // check if the symbol name of PUB/TPT is in the memo
-    if (memo.find("-symbol") != string::npos)
-    {
-        auto first_separator_pos = memo.find("-symbol");
-        eosio_assert(first_separator_pos != string::npos, "invalid memo format for symbol");
+    // take the symbol name, and the check if the symbol name of PUB/TPT is in the memo
+    symbol_name symbol = _getSymbolName(memo);
 
-        string name_str = memo.substr(0, first_separator_pos);
-    }
+    // get account of contract by the different symbol name in the memo
+    // construct the memo of action by the different symbol name in the memo
+    // and then execute the transfer action of target contract
+    string actionMemo;
+    account_name contract;
+    switch (symbol) {
+        case PUB_SYMBOL_NAME:
+        contract = DAP_CONTRACT;
+        actiontMemo = string("PUB-referrer:").append(GOD_ACCOUNT);
+        break;
+        case TPT_SYMBOL_NAME:
+        contract = DAP_CONTRACT;
+        actionMemo = string("TPT-referrer:").append(GOD_ACCOUNT);
+        break;
+        case KBY_SYMBOL_NAME:
+        contract = KBY_CONTRACT;
+        actionMemo = "";
+        break;
+    } 
+    action(permission_level{_self, N(active)},
+        contract, N(transfer),
+        make_tuple(_self, from, quantity, actionMemo)
+    ).send();
 }
 
 void Dexlize::Proxy::sell() 

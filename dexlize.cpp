@@ -35,6 +35,11 @@ asset Dexlize::Aux::getEosAmount(const map<string, string>& memoMap)
     return asset(S(4, _getMemoValue("eos", memoMap)), PUB_SYMBOL);
 }
 
+string Dexlize::Aux::getTransactionType(const map<string, string>& memoMap)
+{
+    return _getMemoValue("type", memoMap);
+}
+
 account_name Dexlize::Aux::getContractAccountName(symbol_name symbolName)
 {
     account_name contractName;
@@ -116,30 +121,53 @@ void Dexlize::Proxy::sell(account_name from, account_name to, asset quantity, st
 {
     require_auth(from);
     // check the account of from and to
-    
-    // execute the sell action of tokendapppub, transfer quantity from the account of from to dexlize
-    account_name contract = aux.getContractAccountName(quantity.symbol.name);
-    action(permission_level{_self, N(active)},
-        contract,
-        N(sell),
-        make_tuple(_self, contract, quantity, string("dexlize withdraw https://dexlize.io"))
-    ).send();
 
-    // execute the transfer action of eosio.token, transfer the eos from dexlize to the account of from
+    // parse the memo of json fomat to get the transfer type
     Utils utils;
     map<string, string> memoMap = utils.parseJson(memo);
-    asset eos = aux.getEosAmount(memoMap);
-    action(permission_level{_self, N(active)},
-        N(eosio.token),
-        N(transfer),
-        make_tuple(_self, from, eos, string("dexlize withdraw https://dexlize.io"))
-    ).send();
-}
 
-void Dexlize::Proxy::convert(account_name from, asset fromAsset, asset toAsset) 
-{
-    require_auth(from);
+    // get the type of transfer from json of memo parsed
+    // the type of action in the memo is only way to define the mean of transfer user
+    string type = aux.getTransactionType(memoMap);
+    if (type == "sell") 
+    {
+        // execute the sell action of tokendapppub, transfer quantity from the account of from to dexlize
+        account_name contract = aux.getContractAccountName(quantity.symbol.name);
+        action(permission_level{_self, N(active)},
+            contract,
+            N(sell),
+            make_tuple(_self, contract, quantity, string("dexlize withdraw https://dexlize.io"))
+        ).send();
 
+        // execute the transfer action of eosio.token, transfer the eos from dexlize to the account of from
+        asset eos = aux.getEosAmount(memoMap);
+        action(permission_level{_self, N(active)},
+            N(eosio.token),
+            N(transfer),
+            make_tuple(_self, from, eos, string("dexlize withdraw https://dexlize.io"))
+        ).send();
+    } 
+    else if (type == "convert")
+    {
+        symbol_name fSymbol = quantity.symbol.name;
+        symbol_name tSymbol  = aux.getSymbolName(memoMap);
+        // sell the token of fromer account by symbol to account of contranct(e.g. tokendapppub)
+
+        // buy the token of to account by symbol from account of contract(e.g. tokendapppub)
+
+        // transfer the brought token to user(fromer account)
+
+    }
+    else if (type == "transfer") 
+    {
+        // execute the sell action of tokendapppub, transfer quantity from the account of from to dexlize
+        account_name contract = aux.getContractAccountName(quantity.symbol.name);
+        action(permission_level{_self, N(active)},
+            contract,
+            N(transfer),
+            make_tuple(_self, to, quantity, string("dexlize transfer https://dexlize.io"))
+        ).send();
+    }
 }
 
 extern "C" {
@@ -157,7 +185,7 @@ extern "C" {
         if (code != receiver) return;
 
         switch (action) {
-            EOSIO_API(Dexlize::Proxy, (version)(sell))
+            EOSIO_API(Dexlize::Proxy, (version))
         };
         eosio_exit(0);
     }

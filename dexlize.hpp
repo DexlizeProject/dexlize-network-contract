@@ -29,27 +29,20 @@ namespace Dexlize {
         void version();
         void buy(account_name from, account_name to, asset quantity, string memo);
         void sell(account_name from, account_name to, asset quantity, string memo);
-        void convert(account_name from, asset fromAsset, asset toAsset);
 
         private:
         Aux aux;
-        // symbol_name _string2SymbolName(const string& str);
-        // string _getMemoValue(const string& key, const map<string, string>& memoMap);
-        // symbol_name _getSymbolName(const map<string, string>& memoMap);
-        // asset _getStakeAmount(const map<string, string>& memoMap);
-        // asset _getEosAmount(const map<string, string>& memoMap);
-        // account_name _getContractAccountName(symbol_name symbolName);
-        // string _getActionMemo(symbol_name symbolName);
     };
 
     class Aux {
         public:
         symbol_name string2SymbolName(const string& str);
+        account_name getContractAccountName(symbol_name symbolName);
+        string getActionMemo(symbol_name symbolName);
         symbol_name getSymbolName(const map<string, string>& memoMap);
         asset getStakeAmount(const map<string, string>& memoMap);
         asset getEosAmount(const map<string, string>& memoMap);
-        account_name getContractAccountName(symbol_name symbolName);
-        string getActionMemo(symbol_name symbolName);
+        string getTransactionType(const map<string, string>& memoMap);
 
         private:
         string _getMemoValue(const string& key, const map<string, string>& memoMap);
@@ -57,5 +50,5 @@ namespace Dexlize {
 };
 
 #ifdef ABIGEN
-EOSIO_ABI(Dexlize::Proxy, (version)(sell))
+EOSIO_ABI(Dexlize::Proxy, (version))
 #endif

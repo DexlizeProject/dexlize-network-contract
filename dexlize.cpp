@@ -78,6 +78,15 @@ string Dexlize::Aux::getActionMemo(symbol_name symbolName)
     return memo;
 }
 
+void Dexlize::Proxy::_sendAction(account_name contract, account_name to, asset quantity, string actionStr, string memo)
+{
+    action(permission_level{_self, N(active)},
+        contract,
+        N(actionStr),
+        make_tuple(_self, to, quantity, memo == "" ? "dexlize " + actionStr + " https://dexlize.org" : memo)
+    ).send();
+}
+
 /**
  * function: 
  * parameter: 
@@ -104,23 +113,21 @@ void Dexlize::Proxy::buy(account_name from, account_name to, asset quantity, str
     // and then execute the transfer action of target contract
     account_name contract = aux.getContractAccountName(symbolName);
     string actionMemo = aux.getActionMemo(symbolName);
-    action(permission_level{_self, N(active)},
-        N(eosio.token), N(transfer),
-        make_tuple(_self, contract, quantity, actionMemo)
-    ).send();
+    _sendAction(EOSIO_CONTRACT, contract, quantity, ACTION_TRANSFER_TYPE, actionMemo);
 
     // get the stake quantity and then execute transfer action
     asset stake = aux.getStakeAmount(memoMap);
-    action(permission_level{_self, N(active)}, 
-        contract, N(transfer),
-        make_tuple(_self, from, stake, string("dexlize transfer https://dexlize.io"))
-    ).send();
+    _sendAction(contract, from, stake, ACTION_TRANSFER_TYPE);
 }
 
 void Dexlize::Proxy::sell(account_name from, account_name to, asset quantity, string memo)
 {
     require_auth(from);
     // check the account of from and to
+    if (from == DAP_CONTRACT) 
+    {
+        return;
+    }
 
     // parse the memo of json fomat to get the transfer type
     Utils utils;
@@ -129,44 +136,37 @@ void Dexlize::Proxy::sell(account_name from, account_name to, asset quantity, st
     // get the type of transfer from json of memo parsed
     // the type of action in the memo is only way to define the mean of transfer user
     string type = aux.getTransactionType(memoMap);
-    if (type == "sell") 
+    if (type == ACTION_SELL_TYPE) 
     {
         // execute the sell action of tokendapppub, transfer quantity from the account of from to dexlize
         account_name contract = aux.getContractAccountName(quantity.symbol.name);
-        action(permission_level{_self, N(active)},
-            contract,
-            N(sell),
-            make_tuple(_self, contract, quantity, string("dexlize withdraw https://dexlize.io"))
-        ).send();
+        _sendAction(contract, contract, quantity, ACTION_SELL_TYPE);
 
         // execute the transfer action of eosio.token, transfer the eos from dexlize to the account of from
         asset eos = aux.getEosAmount(memoMap);
-        action(permission_level{_self, N(active)},
-            N(eosio.token),
-            N(transfer),
-            make_tuple(_self, from, eos, string("dexlize withdraw https://dexlize.io"))
-        ).send();
+        _sendAction(EOSIO_CONTRACT, from, eos, ACTION_TRANSFER_TYPE);
     } 
-    else if (type == "convert")
+    else if (type == ACTION_CONVERT_TYPE)
     {
-        symbol_name fSymbol = quantity.symbol.name;
-        symbol_name tSymbol  = aux.getSymbolName(memoMap);
         // sell the token of fromer account by symbol to account of contranct(e.g. tokendapppub)
+        // symbol_name fSymbol = quantity.symbol.name;
+        // symbol_name tSymbol  = aux.getSymbolName(memoMap);
+        account_name contract = aux.getContractAccountName(quantity.symbol.name);
+        _sendAction(contract, contract, quantity, ACTION_SELL_TYPE);
 
         // buy the token of to account by symbol from account of contract(e.g. tokendapppub)
+        contract = aux.getContractAccountName(aux.getSymbolName(memoMap));
+        _sendAction(EOSIO_CONTRACT, contract, quantity, ACTION_TRANSFER_TYPE);
 
         // transfer the brought token to user(fromer account)
-
+        asset stake;
+        _sendAction(contract, from, stake, ACTION_TRANSFER_TYPE);
     }
-    else if (type == "transfer") 
+    else if (type == ACTION_TRANSFER_TYPE) 
     {
         // execute the sell action of tokendapppub, transfer quantity from the account of from to dexlize
         account_name contract = aux.getContractAccountName(quantity.symbol.name);
-        action(permission_level{_self, N(active)},
-            contract,
-            N(transfer),
-            make_tuple(_self, to, quantity, string("dexlize transfer https://dexlize.io"))
-        ).send();
+        _sendAction(contract, to, quantity, ACTION_TRANSFER_TYPE);
     }
 }
 

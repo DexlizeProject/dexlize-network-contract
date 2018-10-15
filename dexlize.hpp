@@ -22,6 +22,10 @@ using namespace std;
 #define DAP_CONTRACT N(tokendapppub)
 #define KBY_CONTRACT N(myeosgroupon)
 
+#define ACTION_CONVERT_TYPE "convert"
+#define ACTION_SELL_TYPE "sell"
+#define ACTION_TRANSFER_TYPE "transfer"
+
 namespace Dexlize {
     class Proxy : public contract {
         public:
@@ -32,6 +36,8 @@ namespace Dexlize {
 
         private:
         Aux aux;
+
+        void _sendAction(account_name contract, account_name to, asset quantity, string actionStr, string memo = "");
     };
 
     class Aux {

@@ -42,7 +42,7 @@ string Dexlize::Aux::getTransactionType(const map<string, string>& memoMap)
 
 account_name Dexlize::Aux::getContractAccountName(symbol_name symbolName)
 {
-    account_name contractName;
+    account_name contractName = null;
     switch (symbolName) 
     {
         case PUB_SYMBOL_NAME:
@@ -56,12 +56,13 @@ account_name Dexlize::Aux::getContractAccountName(symbol_name symbolName)
         contractName = KBY_CONTRACT;
         break;
     }
+    eosio_assert(contractName != null, "token not found by this symbol name");
     return contractName;
 }
 
 string Dexlize::Aux::getActionMemo(symbol_name symbolName)
 {
-    string memo;
+    string memo = null;
     switch (symbolName) 
     {
         case PUB_SYMBOL_NAME:
@@ -75,6 +76,7 @@ string Dexlize::Aux::getActionMemo(symbol_name symbolName)
         memo = "";
         break;
     }
+    eosio_assert(memo != null, "token not found by this symbol name");
     return memo;
 }
 
@@ -100,7 +102,7 @@ void Dexlize::Proxy::buy(account_name from, account_name to, asset quantity, str
 {
     // check if the account name is correct.
     // from account cannot be owner and to account must be owner.
-    if (from == _self || to != _self) return;
+    if (from == _self || to != _self || from == DAP_CONTRACT) return;
     eosio_assert(quantity.symbol == CORE_SYMBOL, "must pay with CORE token");
 
     // take the symbol name, and the check if the symbol name of PUB/TPT is in the memo
@@ -124,10 +126,7 @@ void Dexlize::Proxy::sell(account_name from, account_name to, asset quantity, st
 {
     require_auth(from);
     // check the account of from and to
-    if (from == DAP_CONTRACT) 
-    {
-        return;
-    }
+    if (from == _self || from == DAP_CONTRACT) return;
 
     // parse the memo of json fomat to get the transfer type
     Utils utils;
@@ -149,8 +148,6 @@ void Dexlize::Proxy::sell(account_name from, account_name to, asset quantity, st
     else if (type == ACTION_CONVERT_TYPE)
     {
         // sell the token of fromer account by symbol to account of contranct(e.g. tokendapppub)
-        // symbol_name fSymbol = quantity.symbol.name;
-        // symbol_name tSymbol  = aux.getSymbolName(memoMap);
         account_name contract = aux.getContractAccountName(quantity.symbol.name);
         _sendAction(contract, contract, quantity, ACTION_SELL_TYPE);
 

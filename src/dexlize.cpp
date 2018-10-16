@@ -3,7 +3,7 @@
  *  @copyright defined in Dexlize/LICENSE
  */
 #include "dexlize.hpp"
-#include "utils.hpp"
+#include "utils/utils.hpp"
 
 symbol_name Dexlize::Aux::string2SymbolName(const string& str)
 {

@@ -3,6 +3,7 @@
  *  @copyright defined in Dexlize/LICENSE
  */
 #include <exception>
+#include <iostream>
 #include "utils.hpp"
 
 Dexlize::ErrorType Dexlize::Utils::parseJson(const std::string& memo, std::map<std::string, std::string>& memoMap)
@@ -10,7 +11,7 @@ Dexlize::ErrorType Dexlize::Utils::parseJson(const std::string& memo, std::map<s
     try {
         // remove surplus character(e.g. {}) in the format of memo, and then split the key_value by delimiter
         if (memo[0] == '{' && memo[memo.length() - 1] == '}') {
-            std::vector<std::string> values =  _split(memo.substr(1, memo.length() - 1), ",");
+            std::vector<std::string> values =  _split(memo.substr(1, memo.length() - 2), ",");
 
             // parse the key_value (e.g. "symbol": "DEX")
             for (auto it = values.begin(); it != values.end(); ++it) {
@@ -53,12 +54,12 @@ std::vector<std::string> Dexlize::Utils::_split(const std::string& str, const st
     std::string t = str;
     std::string::size_type it = t.find(delim);
     while (it != std::string::npos) {
-        values.emplace_back(t.substr(0, it));
+        values.emplace_back(_trim(t.substr(0, it)));
         t = t.substr(it + 1);
         it = t.find(delim);
     }
     if (t.length() > 0) {
-        values.emplace_back(t);
+        values.emplace_back(_trim(t));
     }
 
     return values;
@@ -73,7 +74,7 @@ std::string Dexlize::Utils::_trim(const std::string& str)
     {
         if (t[i] != ' ')
         {
-            t = t.substr(i + 1);
+            t = t.substr(i);
             break;
         }
     }

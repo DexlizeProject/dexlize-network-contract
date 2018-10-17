@@ -106,8 +106,11 @@ void Dexlize::Proxy::buy(account_name from, account_name to, asset quantity, str
     eosio_assert(quantity.symbol == CORE_SYMBOL, "must pay with CORE token");
 
     // take the symbol name, and the check if the symbol name of PUB/TPT is in the memo
+    map<string, string> memoMap;
     Utils utils;
-    map<string, string> memoMap = utils.parseJson(memo);
+    if (!utils.parseJson(memo)) {
+        eosio_assert(iter == memoMap.end(), "invalid memo format, the memo must be the format of json");
+    }
     symbol_name symbolName = aux.getSymbolName(memoMap);
 
     // get account of contract by the different symbol name in the memo
@@ -129,8 +132,11 @@ void Dexlize::Proxy::sell(account_name from, account_name to, asset quantity, st
     if (from == _self || from == DAP_CONTRACT) return;
 
     // parse the memo of json fomat to get the transfer type
+    map<string, string> memoMap;
     Utils utils;
-    map<string, string> memoMap = utils.parseJson(memo);
+    if (!utils.parseJson(memo, memoMap)) {
+        eosio_assert(iter == memoMap.end(), "invalid memo format, the memo must be the format of json");
+    }
 
     // get the type of transfer from json of memo parsed
     // the type of action in the memo is only way to define the mean of transfer user

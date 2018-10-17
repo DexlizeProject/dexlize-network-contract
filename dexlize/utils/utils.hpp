@@ -4,8 +4,9 @@
  */
 #pragma once
 
-#include <map>
 #include <string>
+#include <vector>
+#include <map>
 
 namespace Dexlize {
     enum ErrorType {
@@ -21,7 +22,7 @@ namespace Dexlize {
         ErrorType parseJson(const std::string& memo, std::map<std::string, std::string>& memoMap);
 
         private:
-        std::vector<string> _split(const std::string& str, const string& delim);
+        std::vector<std::string> _split(const std::string& str, const std::string& delim);
         std::string _trim(const std::string& str);
         std::string _removeSurplus(const std::string& str);
     };

@@ -5,22 +5,22 @@
 #include <exception>
 #include "utils.hpp"
 
-ErrorType Dexlize::Utils::parseJson(const std::string& memo, std::map<std::string, std::string>& memoMap)
+Dexlize::ErrorType Dexlize::Utils::parseJson(const std::string& memo, std::map<std::string, std::string>& memoMap)
 {
     try {
-        // remove the {} in the format of memo, and then split the key_value by delimiter
-        if (memo[0] == "{" && memo[memo.lenghth() - 1] == "}") {
-            std::vector<string> values =  _split(memo.subtr(1, memo.length() - 1), ",");
+        // remove surplus character(e.g. {}) in the format of memo, and then split the key_value by delimiter
+        if (memo[0] == '{' && memo[memo.length() - 1] == '}') {
+            std::vector<std::string> values =  _split(memo.substr(1, memo.length() - 1), ",");
 
             // parse the key_value (e.g. "symbol": "DEX")
             for (auto it = values.begin(); it != values.end(); ++it) {
-                if (it->find(":") == string:npos) return ErrorType::fail2;
+                if (it->find(":") == std::string::npos) return ErrorType::fail2;
 
                 auto keyValue = _split(*it, ":");
-                string key = _removeSurplus(keyValue[0]);
-                string value = _removeSurplus(keyValue[1]);
-                if (key.find('"') != string::npos || value.find('"') != string::npos) {
-                    return Error::fail2;
+                std::string key = _removeSurplus(keyValue[0]);
+                std::string value = _removeSurplus(keyValue[1]);
+                if (key.find('"') != std::string::npos || value.find('"') != std::string::npos) {
+                    return ErrorType::fail2;
                 } else {
                     memoMap.emplace(key, value);
                 }
@@ -29,57 +29,60 @@ ErrorType Dexlize::Utils::parseJson(const std::string& memo, std::map<std::strin
         else {
             return ErrorType::fail1;
         }
-
-        return ErrorType::success;
     } catch (const std::exception& e) {
         return ErrorType::unknow;
     }
+
+    return ErrorType::success;
 }
 
 std::string Dexlize::Utils::_removeSurplus(const std::string& str)
 {
     std::string value = _trim(str);
+    // remove the surplus character (e.g. "")
     if (value[0] == '"' && value[value.length() - 1] == '"') {
         value = value.substr(1, value.length() - 2);
     }
     return value;
 }
 
-std::vector<string> Dexlize::Utils::_split(const string& str, const string& delim)
+std::vector<std::string> Dexlize::Utils::_split(const std::string& str, const std::string& delim)
 {
-    std::vector<string> result;
+    std::vector<std::string> values;
 
     std::string t = str;
-    while ((auto it = t.find(delim)) != string::npos) {
-        result.emplace_back(t.substr(0, it));
+    std::string::size_type it = t.find(delim);
+    while (it != std::string::npos) {
+        values.emplace_back(t.substr(0, it));
         t = t.substr(it + 1);
+        it = t.find(delim);
     }
     if (t.length() > 0) {
-        result.emplace_back(t);
+        values.emplace_back(t);
     }
 
-    return result;
+    return values;
 }
 
-std::string Dexlize::Utils::_trim(const cstd::string& str) 
+std::string Dexlize::Utils::_trim(const std::string& str) 
 {
     std::string t = str;
 
     // remove left space
-    for (auto it = t.begin(); it != t.end(); ++it) 
+    for (auto i = 0; i < t.length(); ++i) 
     {
-        if (*it != ' ')
+        if (t[i] != ' ')
         {
-            t = t.substr(it);
+            t = t.substr(i + 1);
             break;
         }
     }
 
     // remove right space
-    for (auto it = t.rbegin(); it != t.rend(); ++it)
+    for (auto i = t.length() - 1; i > 0; --i)
     {
-        if (*it != ' ') {
-            t = t.substr(0, it);
+        if (t[i] != ' ') {
+            t = t.substr(0, i + 1);
             break;
         }
     }

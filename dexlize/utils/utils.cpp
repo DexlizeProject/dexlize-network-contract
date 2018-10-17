@@ -3,15 +3,15 @@
  *  @copyright defined in Dexlize/LICENSE
  */
 #include <exception>
-#include <iostream>
 #include "utils.hpp"
 
 Dexlize::ErrorType Dexlize::Utils::parseJson(const std::string& memo, std::map<std::string, std::string>& memoMap)
 {
     try {
         // remove surplus character(e.g. {}) in the format of memo, and then split the key_value by delimiter
-        if (memo[0] == '{' && memo[memo.length() - 1] == '}') {
-            std::vector<std::string> values =  _split(memo.substr(1, memo.length() - 2), ",");
+        std::string::size_type t1 = memo.find("{"), t2 = memo.find("}");
+        if (t1 != std::string::npos && t2 != std::string::npos) {
+            std::vector<std::string> values =  _split(memo.substr(t1 + 1, t2 - 1), ",");
 
             // parse the key_value (e.g. "symbol": "DEX")
             for (auto it = values.begin(); it != values.end(); ++it) {
@@ -67,23 +67,23 @@ std::vector<std::string> Dexlize::Utils::_split(const std::string& str, const st
 
 std::string Dexlize::Utils::_trim(const std::string& str) 
 {
-    std::string t = str;
+    std::string reVal = str;
 
     // remove left space
-    for (auto i = 0; i < t.length(); ++i) {
-        if (t[i] != ' ') {
-            t = t.substr(i);
+    for (auto i = 0; i < reVal.length(); ++i) {
+        if (reVal[i] != ' ') {
+            reVal = reVal.substr(i);
             break;
         }
     }
 
     // remove right space
-    for (auto i = t.length() - 1; i > 0; --i) {
-        if (t[i] != ' ') {
-            t = t.substr(0, i + 1);
+    for (auto i = reVal.length() - 1; i > 0; --i) {
+        if (reVal[i] != ' ') {
+            reVal = reVal.substr(0, i + 1);
             break;
         }
     }
 
-    return t;
+    return reVal;
 }

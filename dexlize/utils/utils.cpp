@@ -70,18 +70,15 @@ std::string Dexlize::Utils::_trim(const std::string& str)
     std::string t = str;
 
     // remove left space
-    for (auto i = 0; i < t.length(); ++i) 
-    {
-        if (t[i] != ' ')
-        {
+    for (auto i = 0; i < t.length(); ++i) {
+        if (t[i] != ' ') {
             t = t.substr(i);
             break;
         }
     }
 
     // remove right space
-    for (auto i = t.length() - 1; i > 0; --i)
-    {
+    for (auto i = t.length() - 1; i > 0; --i) {
         if (t[i] != ' ') {
             t = t.substr(0, i + 1);
             break;

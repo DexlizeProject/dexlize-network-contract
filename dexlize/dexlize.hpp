@@ -12,17 +12,9 @@ using namespace eosio;
 using namespace std;
 
 #define SN(X) (string_to_symbol(0, #X) >> 8)
-#define PUB_SYMBOL S(4, PUB)
-#define PUB_SYMBOL_NAME SN(PUB)
-#define TPT_SYMBOL_NAME SN(TPT)
-#define KBY_SYMBOL_NAME SN(KBY)
 
 #define GOD_ACCOUNT "eostestbp121"
-#define EOSIO_CONTRACT N(eosio.token)
-#define DAP_CONTRACT N(tokendapppub)
-#define KBY_CONTRACT N(myeosgroupon)
 
-#define ACTION_CONVERT_TYPE "convert"
 #define ACTION_SELL_TYPE "sell"
 #define ACTION_TRANSFER_TYPE "transfer"
 
@@ -36,19 +28,18 @@ namespace Dexlize {
 
         private:
         Aux aux;
+        map<uint64_t, vector<uint64_t>> mapContract2Symbol = {{N("tokendapppub"), {SN("PUB"), SN("TPT")}}};
 
-        void _sendAction(account_name contract, account_name to, asset quantity, string actionStr, string memo = "");
+        void _sendAction(account_name contract, account_name to, asset quantity, string actionStr, string memo);
+        bool _checkSymbol(account_name contractAccount, symbol_name symbolName);
     };
 
     class Aux {
         public:
-        symbol_name string2SymbolName(const string& str);
-        account_name getContractAccountName(symbol_name symbolName);
-        string getActionMemo(symbol_name symbolName);
+        account_name getContractAccount(const map<string, string>& memoMap);
         symbol_name getSymbolName(const map<string, string>& memoMap);
-        asset getStakeAmount(const map<string, string>& memoMap);
-        asset getEosAmount(const map<string, string>& memoMap);
-        string getTransactionType(const map<string, string>& memoMap);
+        string getOwnerAccount(const map<string, string>& memoMap);
+        string getActionMemo(symbol_name symbolName, string owner);
 
         private:
         string _getMemoValue(const string& key, const map<string, string>& memoMap);

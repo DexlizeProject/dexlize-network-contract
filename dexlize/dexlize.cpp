@@ -77,8 +77,8 @@ bool Dexlize::Proxy::_checkSymbol(account_name contractAccount, symbol_name symb
 }
 
 /**
- * function: 
- * parameter: 
+ * function: display the current contract version
+ * parameter: void
  */
 void Dexlize::Proxy::version()
 {
@@ -86,7 +86,7 @@ void Dexlize::Proxy::version()
 }
 
 /**
- * function: 
+ * function: user can transfer the eos to buy take by this interface, and also can set the stake beneficiary
  * parameter: memo - json format e.g. {"contract": "dexlize", "symbol": "DEX", "owner": "eosbitportal"}
  * */
 void Dexlize::Proxy::buy(account_name from, account_name to, asset eos, string memo)
@@ -109,14 +109,22 @@ void Dexlize::Proxy::buy(account_name from, account_name to, asset eos, string m
     // and then execute the transfer action of target contract
     string owner = aux.getOwnerAccount(memoMap);
     string actionMemo = aux.getActionMemo(symbolName, owner);
-    _sendAction(N(eosio.token), N(contractAccount), eos, ACTION_TRANSFER_TYPE, actionMemo);
+    _sendAction(N(eosio.token), contractAccount, eos, ACTION_TRANSFER_TYPE, actionMemo);
 }
 
+/**
+ * function: user can sell stake to gain the eos, and also can set the selled stake beneficiary
+ * paraneter: memo - json format e.g. {"onwer": "eosbitportal"}
+ **/
 void Dexlize::Proxy::sell(account_name from, account_name to, asset quantity, string memo)
 {
     require_auth(from);
+    
     // check the account of from and to
     if (from == _self && to != _self) return;
+    eosio_assert(quantity.is_valid(), "invalid quantity");
+    eosio_assert(quantity.amount > 0, "must transfer positive quantity");
+    eosio_assert(memo.size() <= 256, "memo has more than 256 bytes");
 
     // parse the memo of json fomat to get the transfer type
     Utils utils;
@@ -127,7 +135,7 @@ void Dexlize::Proxy::sell(account_name from, account_name to, asset quantity, st
     eosio_assert(_checkSymbol(contractAccount, symbolName), "current symbol is not supported");
 
     // get the contract account from the asset symbol
-    // execute the action of sell in the target contract
+    // execute the action of sell by the target contract
     string owner = aux.getOwnerAccount(memoMap); 
     _sendAction(contractAccount, contractAccount, quantity, ACTION_SELL_TYPE, "-owner:" + owner);
 }

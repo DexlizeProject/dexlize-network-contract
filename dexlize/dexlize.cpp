@@ -5,7 +5,7 @@
 #include "dexlize.hpp"
 #include "utils/utils.hpp"
 
-string Dexlize::Aux::_getMemoValue(const string& key, const map<string, string>& memoMap)
+std::string Dexlize::Aux::_getMemoValue(const string& key, const map<string, string>& memoMap)
 {
     auto iter = memoMap.find(key);
     if (iter != memoMap.end()) 
@@ -15,12 +15,12 @@ string Dexlize::Aux::_getMemoValue(const string& key, const map<string, string>&
     eosio_assert(iter == memoMap.end(), "invalid memo format");
 }
 
-symbol_name Dexlize::Aux::getSymbolName(const map<string, string>& memoMap)
+eosio::symbol_name Dexlize::Aux::getSymbolName(const map<string, string>& memoMap)
 {
     return SN(_getMemoValue("symbol", memoMap));
 }
 
-string Dexlize::Aux::getOwnerAccount(const map<string, string>& memoMap)
+std::string Dexlize::Aux::getOwnerAccount(const map<string, string>& memoMap)
 {
     return _getMemoValue("owner", memoMap);
 }
@@ -30,9 +30,9 @@ account_name Dexlize::Aux::getContractAccount(const map<string, string>& memoMap
     return N(_getMemoValue("contract", memoMap));
 }
 
-string Dexlize::Aux::getActionMemo(symbol_name symbolName, string owner)
+std::string Dexlize::Aux::getActionMemo(symbol_name symbolName, string owner)
 {
-    string memo;
+    string memo = "dexlize";
 
     switch (symbolName)
     {
@@ -119,7 +119,7 @@ void Dexlize::Proxy::buy(account_name from, account_name to, asset eos, string m
 void Dexlize::Proxy::sell(account_name from, account_name to, asset quantity, string memo)
 {
     require_auth(from);
-    
+
     // check the account of from and to
     if (from == _self && to != _self) return;
     eosio_assert(quantity.is_valid(), "invalid quantity");

@@ -8,9 +8,6 @@
 #include <eosiolib/asset.hpp>
 #include <eosiolib/action.hpp>
 
-using namespace eosio;
-using namespace std;
-
 #define SN(X) (string_to_symbol(0, #X) >> 8)
 
 #define GOD_ACCOUNT "eostestbp121"
@@ -19,6 +16,10 @@ using namespace std;
 #define ACTION_TRANSFER_TYPE "transfer"
 
 namespace Dexlize {
+    
+    using namespace eosio;
+    using namespace std;
+
     class Proxy : public contract {
         public:
         Proxy(account_name self) : contract(self) {};

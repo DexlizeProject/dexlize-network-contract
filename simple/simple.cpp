@@ -7,7 +7,7 @@ void Simple::simple::version()
 
 void Simple::simple::transfer(account_name from, account_name to, asset quantity, string memo)
 {
-
+    print("transfer from ", eosio::name{from}, " to ", eosio::name{to}, " ", quantity, "\n");
 }
 
 void Simple::simple::create(account_name issuer, asset maximum_supply)
@@ -32,12 +32,32 @@ void Simple::simple::create(account_name issuer, asset maximum_supply)
 
 void Simple::simple::issue(account_name to, asset quantity, string memo)
 {
+    auto symbol = quantity.symbol;
+    eosio_assert(symbol.is_valid(), "invalid symbol name");
+    eosio_assert(memo.size() <= 256, "memo has more than 256 bytes");
 
+    auto symbol_name = symbol.name();
+    stats statstable(_self, symbol_name);
+    auto existing = statstable.find(symbol_name);
+    eosio_assert(existing != statstable.end(), "token with symbol does not exist, create token before issue");
+    const auto& st = *existing;
+
+    require_auth(st.issuer);
+    eosio_assert(quantity.is_valid(), "invalid quantity");
+    eosio_assert(quantity.amount > 0, "must issue positive quantity");
+
+    eosio_assert(quantity.symbol == st.supply.symbol, "symbol precision mismatch");
+    eosio_assert(quantity.amount <= st.max_supply.amount - st.supply.amount, "quantity exceeds available supply");
+
+    statstable.modify( st, 0, [&]( auto& s ) {
+       s.supply += quantity;
+    });
 }
 
-void Simple::simple::newtoken()
+void Simple::simple::newtoken(account_name from, asset maximum_stake)
 {
-
+    SEND_INLINE_ACTION(*this, create, {from, N(active)}, {from, maximum_stake});
+    SEND_INLINE_ACTION(*this, issue, {from, N(active)}, {from, maximum_stake, string("")});
 }
 
 extern "C" {

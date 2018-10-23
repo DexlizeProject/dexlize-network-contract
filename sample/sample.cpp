@@ -30,6 +30,20 @@ void dexlize::sample::_add_balance(account_name owner, asset value, account_name
     }
 }
 
+std::string dexlize::sample::_get_prop(string prop, string memo)
+{
+    string value = "";
+
+    prop = "-" + prop + ":";
+    auto iter = memo.find(prop);
+    if (iter != string::npos) {
+        value = memo.substr(memo.find(":", iter) + 1);
+        value = value.substr(0, value.find("-"));
+    }
+
+    return value;
+}
+
 std::pair<eosio::asset, eosio::asset> dexlize::sample::_sample_sell(symbol_name name, int64_t stake)
 {
     tb_samples sample_sgt(_self, name);
@@ -41,8 +55,9 @@ std::pair<eosio::asset, eosio::asset> dexlize::sample::_sample_sell(symbol_name 
     asset eos = asset(sample.sell(stake), CORE_SYMBOL);
     asset fee = asset(sample.fee(eos.amount), CORE_SYMBOL);
 
-    eosio_assert(eos.amount > 0, "eos amount should be bigger than 0");
+    eosio_assert(eos.amount > 0, "eos amount should be bigger than zero");
     eosio_assert(eos.amount < sample.eos - sample.base_eos, "eos amount overflow");
+    eosio_assert(fee.amount >= 0, "fee amount must be bigger than zero");
 
     sample_sgt.set(sample, sample.owner);
 
@@ -57,14 +72,14 @@ eosio::asset dexlize::sample::_sample_buy(symbol_name name, int64_t eos)
     st_sample sample = sample_sgt.get();
     eosio_assert(now() > sample.start_time, "the token issuance has not yet begun");
 
-    int64_t stake = sample.buy(eos);
+    asset stake = asset(sample.buy(eos), sample.symbol);
 
-    eosio_assert(stake > 0, "stake amount should be bigger than 0");
-    eosio_assert(stake < sample.base_stake - sample.stake, "stake amount overflow");
+    eosio_assert(stake.amount > 0, "stake amount should be bigger than zero");
+    eosio_assert(stake.amount < sample.base_stake - sample.stake, "stake amount overflow");
 
     sample_sgt.set(sample, sample.owner);
 
-    return asset();
+    return stake;
 }
 
 void dexlize::sample::version()
@@ -100,21 +115,14 @@ void dexlize::sample::buy(account_name from, account_name to, asset eos, string 
     if (from == _self || to != _self) return;
     eosio_assert(eos.symbol == CORE_SYMBOL, "must pay with CORE token");
 
-    // find the account of owner
-    string owner_str = "";
-    auto iter = memo.find("-owner:");
-    if (iter != string::npos) {
-        owner_str = memo.substr(memo.find(":", iter) + 1);
-        owner_str = owner_str.substr(0, owner_str.find("-"));
-    }
+    // find the bought symbol name from the memo
+    string symbol_name_str = _get_prop("symbol", memo);
 
-    // find the account of referrer
-    string referrer_str = "";
-    auto refer_iter = memo.find("-referrer:");
-    if (iter != string::npos) {
-        referrer_str = memo.substr(memo.find(":", iter) + 1);
-        referrer_str = referrer_str.substr(0, referrer_str.find("-"));
-    }
+    // find the account of referrer from the memo
+    string referrer_str = _get_prop("referrer", memo);
+
+    // find the account of owner from the memo
+    string owner_str = _get_prop("owner", memo);
 
     // transfer the referrer fee
     int32_t fee = eos.amount * 0.0001;
@@ -126,9 +134,7 @@ void dexlize::sample::buy(account_name from, account_name to, asset eos, string 
     ).send();
 
     // transfer the bought stake
-    tb_samples sample_sgt(_self, eos.symbol.name);
-    st_sample sample = sample_sgt.get();
-    asset stake = asset(sample.buy(eos.amount - fee), sample.symbol);
+    asset stake = _sample_buy(SN(symbol_name_str), eos.amount);
     account_name owner = owner_str == "" ? from : N(owner_str);
     _add_balance(owner, stake, from);
 
@@ -148,12 +154,12 @@ void dexlize::sample::sell(account_name from, asset stake, string memo)
     eosio_assert(stake.symbol == from_acnt->balance.symbol, "symbol precision mismatch");
     eosio_assert((stake.amount > 0) && (stake.amount <= from_acnt->balance.amount), "invalid amount");
 
-    asset eos_quantity, all_quantity;
-    tie(eos_quantity, all_quantity);
+    asset eos, fee;
+    tie(eos, fee) = _sample_sell(stake.symbol.name, stake.amount);
     action(permission_level{_self, N(active)},
         _self,
         N(receipt),
-        make_tuple(from, string("sell"), stake, all_quantity, all_quantity - eos_quantity)
+        make_tuple(from, string("sell"), stake, eos, eos - fee)
     ).send();
 }
 

@@ -11,6 +11,7 @@ typedef int int128_t;
 
 #define MAX_PERIOD 100ul * 365 * 24 * 60 * 60
 #define MAX_QUANTITY 10000000000000ll*10000
+#define SN(X) (string_to_symbol(0, #X) >> 8)
 
 namespace dexlize {
 
@@ -31,6 +32,7 @@ namespace dexlize {
         private:
         void _sub_balance(account_name owner, asset value);
         void _add_balance(account_name owner, asset value, account_name ram_payer);
+        string _get_prop(string prop, string memo);
 
         pair<asset, asset> _sample_sell(symbol_name name, int64_t stake);
         asset _sample_buy(symbol_name name, int64_t eos);

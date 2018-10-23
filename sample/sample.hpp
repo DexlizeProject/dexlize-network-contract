@@ -7,6 +7,8 @@
 
 typedef int int128_t;
 
+#define REFERRER N(eostestbp121)
+
 #define MAX_PERIOD 100ul * 365 * 24 * 60 * 60
 #define MAX_QUANTITY 10000000000000ll*10000
 
@@ -15,12 +17,12 @@ namespace dexlize {
     using namespace eosio;
     using namespace std;
 
-    class simple: public contract {
+    class sample: public contract {
         public: 
-        explicit simple(account_name self): contract(self) {};
+        explicit sample(account_name self): contract(self) {};
 
         void version();
-        void newsimple(account_name from, asset base_eos_quantity, asset maximum_stake, 
+        void newsample(account_name from, asset base_eos_quantity, asset maximum_stake, 
         uint32_t lock_up_period, uint8_t base_fee_percent, uint8_t init_fee_percent, uint32_t start_time);
         void transfer(account_name from, account_name to, asset quantity, string memo);
         void buy(account_name from, account_name to, asset quantity, string memo);
@@ -29,6 +31,9 @@ namespace dexlize {
         private:
         void _sub_balance(account_name owner, asset value);
         void _add_balance(account_name owner, asset value, account_name ram_payer);
+
+        pair<asset, asset> _sample_sell(symbol_name name, int64_t stake);
+        asset _sample_buy(symbol_name name, int64_t eos);
 
         void create(account_name issuer, asset maximum_supply);
         void issue(account_name to, asset quantity, string memo);
@@ -50,16 +55,16 @@ namespace dexlize {
 
         typedef eosio::multi_index<N(accounts), account> accounts;
         typedef eosio::multi_index<N(stat), currency_stats> stats;
-        typedef singleton<N(simple), st_simple> tb_simples;
+        typedef singleton<N(sample), st_sample> tb_samples;
 
         private:
-        void _init_simple(account_name owner, asset base_eos_quantity, asset maximum_stake, uint32_t lock_up_period, 
+        void _init_sample(account_name owner, asset base_eos_quantity, asset maximum_stake, uint32_t lock_up_period, 
                           uint8_t base_fee_percent, uint8_t init_fee_percent, uint32_t start_time) {
             symbol_type symbol = maximum_stake.symbol;
             eosio_assert(symbol.is_valid(), "invalid symbol name");
 
-            tb_simples simple_sgt(_self, symbol.name());
-            eosio_assert(!simple_sgt.exists(), "game has started before");
+            tb_samples sample_sgt(_self, symbol.name());
+            eosio_assert(!sample_sgt.exists(), "game has started before");
             eosio_assert(base_eos_quantity.symbol == CORE_SYMBOL, "base eos must be core token");
             eosio_assert((base_eos_quantity.amount > 0) && (base_eos_quantity.amount <= MAX_QUANTITY), "invalid amount of base EOS pool");
             eosio_assert(maximum_stake.is_valid(), "invalid maximum stake");
@@ -69,13 +74,13 @@ namespace dexlize {
             eosio_assert((init_fee_percent >= base_fee_percent) && (init_fee_percent <=99), "invalid init fee percent");
             eosio_assert(start_time <= now() + 180 * 24 * 60 * 60, "the token issuance must be within six months");
 
-            simple_sgt.set(st_simple{
+            sample_sgt.set(st_sample{
                 symbol, owner, base_eos_quantity.amount, maximum_stake.amount, base_eos_quantity.amount, 
                 maximum_stake.amount, lock_up_period, base_fee_percent, init_fee_percent, start_time}, owner);
         }
     };
 
-    struct st_simple {
+    struct st_sample {
         symbol_type symbol;
         account_name owner;
         int128_t eos;
@@ -128,5 +133,5 @@ namespace dexlize {
 }
 
 #ifdef ABIGEN
-    EOSIO_ABI(Simple::simple, (version)(transfer)(sell)(newsimle))
+    EOSIO_ABI(sample::sample, (version)(transfer)(sell)(newsimle))
 #endif

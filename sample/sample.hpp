@@ -34,8 +34,8 @@ namespace dexlize {
         void _add_balance(account_name owner, asset value, account_name ram_payer);
         string _get_prop(string prop, string memo);
 
-        pair<asset, asset> _sample_sell(symbol_name name, int64_t stake);
-        asset _sample_buy(symbol_name name, int64_t eos);
+        pair<asset, asset> _sample_sell(asset stake);
+        asset _sample_buy(symbol_name name, asset eos);
 
         void create(account_name issuer, asset maximum_supply);
         void issue(account_name to, asset quantity, string memo);

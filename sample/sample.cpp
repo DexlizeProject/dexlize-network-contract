@@ -44,15 +44,15 @@ std::string dexlize::sample::_get_prop(string prop, string memo)
     return value;
 }
 
-std::pair<eosio::asset, eosio::asset> dexlize::sample::_sample_sell(symbol_name name, int64_t stake)
+std::pair<eosio::asset, eosio::asset> dexlize::sample::_sample_sell(asset stake)
 {
-    tb_samples sample_sgt(_self, name);
+    tb_samples sample_sgt(_self, stake.symbol.name);
     eosio_assert(sample_sgt.exists(), "game not found by this symbol name");
 
     st_sample sample = sample_sgt.get();
     eosio_assert(now() > sample.start_time, "the token issuance has not yet begun");
 
-    asset eos = asset(sample.sell(stake), CORE_SYMBOL);
+    asset eos = asset(sample.sell(stake.amount), CORE_SYMBOL);
     asset fee = asset(sample.fee(eos.amount), CORE_SYMBOL);
 
     eosio_assert(eos.amount > 0, "eos amount should be bigger than zero");
@@ -64,7 +64,7 @@ std::pair<eosio::asset, eosio::asset> dexlize::sample::_sample_sell(symbol_name 
     return make_pair(eos, fee);
 }
 
-eosio::asset dexlize::sample::_sample_buy(symbol_name name, int64_t eos)
+eosio::asset dexlize::sample::_sample_buy(symbol_name name, asset eos)
 {
     tb_samples sample_sgt(_self, name);
     eosio_assert(sample_sgt.exists(), "game not found by this symbol name");
@@ -72,7 +72,7 @@ eosio::asset dexlize::sample::_sample_buy(symbol_name name, int64_t eos)
     st_sample sample = sample_sgt.get();
     eosio_assert(now() > sample.start_time, "the token issuance has not yet begun");
 
-    asset stake = asset(sample.buy(eos), sample.symbol);
+    asset stake = asset(sample.buy(eos.amount), sample.symbol);
 
     eosio_assert(stake.amount > 0, "stake amount should be bigger than zero");
     eosio_assert(stake.amount < sample.base_stake - sample.stake, "stake amount overflow");
@@ -134,7 +134,7 @@ void dexlize::sample::buy(account_name from, account_name to, asset eos, string 
     ).send();
 
     // transfer the bought stake
-    asset stake = _sample_buy(SN(symbol_name_str), eos.amount);
+    asset stake = _sample_buy(SN(symbol_name_str), eos);
     account_name owner = owner_str == "" ? from : N(owner_str);
     _add_balance(owner, stake, from);
 
@@ -155,12 +155,23 @@ void dexlize::sample::sell(account_name from, asset stake, string memo)
     eosio_assert((stake.amount > 0) && (stake.amount <= from_acnt->balance.amount), "invalid amount");
 
     asset eos, fee;
-    tie(eos, fee) = _sample_sell(stake.symbol.name, stake.amount);
+    tie(eos, fee) = _sample_sell(stake);
     action(permission_level{_self, N(active)},
         _self,
         N(receipt),
         make_tuple(from, string("sell"), stake, eos, eos - fee)
     ).send();
+
+    // find the account of owner from the memo
+    string owner_str = _get_prop("owner", memo);
+    account_name owner = owner_str == "" ? from : N(owner_str);
+    action(permission_level{_self, N(active)},
+        N(eosio.token),
+        N(transfer),
+        make_tuple(_self, owner, eos - fee, string("sample withdraw https://dexlize.org"))
+    ).send();
+
+    _sub_balance(from, stake);
 }
 
 void dexlize::sample::create(account_name issuer, asset maximum_supply)
@@ -170,7 +181,7 @@ void dexlize::sample::create(account_name issuer, asset maximum_supply)
     auto symbol = maximum_supply.symbol;
     eosio_assert(symbol.is_valid(), "invalid symbol name");
     eosio_assert(maximum_supply.is_valid(), "invalid supply");
-    eosio_assert(maximum_supply.amount > 0, "max-supply must be positive");
+    eosio_assert(maximum_supply.amount > 0, "max supply must be positive");
 
     stats statstable(_self, symbol.name());
     auto existing = statstable.find(symbol.name());

@@ -5,7 +5,7 @@
 #include "dexlize.hpp"
 #include "utils/utils.hpp"
 
-std::string Dexlize::Aux::_getMemoValue(const string& key, const map<string, string>& memoMap)
+std::string Dexlize::Aux::_getMemoValue(const string& key, const map<string, string>& memoMap) const
 {
     auto iter = memoMap.find(key);
     if (iter != memoMap.end()) 
@@ -15,22 +15,22 @@ std::string Dexlize::Aux::_getMemoValue(const string& key, const map<string, str
     eosio_assert(iter == memoMap.end(), "invalid memo format");
 }
 
-eosio::symbol_name Dexlize::Aux::getSymbolName(const map<string, string>& memoMap)
+eosio::symbol_name Dexlize::Aux::getSymbolName(const map<string, string>& memoMap) const
 {
     return SN(_getMemoValue("symbol", memoMap));
 }
 
-std::string Dexlize::Aux::getOwnerAccount(const map<string, string>& memoMap)
+std::string Dexlize::Aux::getOwnerAccount(const map<string, string>& memoMap) const
 {
     return _getMemoValue("owner", memoMap);
 }
 
-account_name Dexlize::Aux::getContractAccount(const map<string, string>& memoMap)
+account_name Dexlize::Aux::getContractAccount(const map<string, string>& memoMap) const
 {
     return N(_getMemoValue("contract", memoMap));
 }
 
-std::string Dexlize::Aux::getActionMemo(symbol_name symbolName, string owner)
+std::string Dexlize::Aux::getActionMemo(const symbol_name& symbolName, const string& owner) const
 {
     string memo = "dexlize";
 

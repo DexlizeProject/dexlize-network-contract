@@ -16,13 +16,13 @@
 #define ACTION_TRANSFER_TYPE "transfer"
 
 namespace Dexlize {
-    
+
     using namespace eosio;
     using namespace std;
 
     class Proxy : public contract {
         public:
-        Proxy(account_name self) : contract(self) {};
+        explicit Proxy(account_name self) : contract(self) {};
         void version();
         void buy(account_name from, account_name to, asset quantity, string memo);
         void sell(account_name from, account_name to, asset quantity, string memo);
@@ -37,13 +37,13 @@ namespace Dexlize {
 
     class Aux {
         public:
-        account_name getContractAccount(const map<string, string>& memoMap);
-        symbol_name getSymbolName(const map<string, string>& memoMap);
-        string getOwnerAccount(const map<string, string>& memoMap);
-        string getActionMemo(symbol_name symbolName, string owner);
+        account_name getContractAccount(const map<string, string>& memoMap) const;
+        symbol_name getSymbolName(const map<string, string>& memoMap) const;
+        string getOwnerAccount(const map<string, string>& memoMap) const;
+        string getActionMemo(const symbol_name& symbolName, const string& owner) const;
 
         private:
-        string _getMemoValue(const string& key, const map<string, string>& memoMap);
+        string _getMemoValue(const string& key, const map<string, string>& memoMap) const;
     };
 };
 

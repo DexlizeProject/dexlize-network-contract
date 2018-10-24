@@ -15,14 +15,17 @@
 #define ACTION_SELL_TYPE "sell"
 #define ACTION_TRANSFER_TYPE "transfer"
 
+/*
+    The Network contract: 
+*/
 namespace Dexlize {
 
     using namespace eosio;
     using namespace std;
 
-    class Proxy : public contract {
+    class Network : public contract {
         public:
-        explicit Proxy(account_name self) : contract(self) {};
+        explicit Network(account_name self) : contract(self) {};
         void version();
         void buy(account_name from, account_name to, asset quantity, string memo);
         void sell(account_name from, account_name to, asset quantity, string memo);
@@ -49,5 +52,5 @@ namespace Dexlize {
 }; // namespace dexlize
 
 #ifdef ABIGEN
-EOSIO_ABI(Dexlize::Proxy, (version))
+EOSIO_ABI(Dexlize::Network, (version))
 #endif

@@ -48,7 +48,7 @@ std::string Dexlize::Aux::getActionMemo(const symbol_name& symbolName, const str
     return memo;
 }
 
-void Dexlize::Proxy::_sendAction(account_name contractAccount, account_name to, asset quantity, string actionStr, string memo)
+void Dexlize::Network::_sendAction(account_name contractAccount, account_name to, asset quantity, string actionStr, string memo)
 {
     action(permission_level{_self, N(active)},
         contractAccount,
@@ -57,7 +57,7 @@ void Dexlize::Proxy::_sendAction(account_name contractAccount, account_name to, 
     ).send();
 }
 
-bool Dexlize::Proxy::_checkSymbol(account_name contractAccount, symbol_name symbolName)
+bool Dexlize::Network::_checkSymbol(account_name contractAccount, symbol_name symbolName)
 {
     bool reVal = false;
 
@@ -80,7 +80,7 @@ bool Dexlize::Proxy::_checkSymbol(account_name contractAccount, symbol_name symb
  * function: display the current contract version
  * parameter: void
  */
-void Dexlize::Proxy::version()
+void Dexlize::Network::version()
 {
     require_auth(_self);
 }
@@ -89,7 +89,7 @@ void Dexlize::Proxy::version()
  * function: user can transfer the eos to buy take by this interface, and also can set the stake beneficiary
  * parameter: memo - json format e.g. {"contract": "dexlize", "symbol": "DEX", "owner": "eosbitportal"}
  * */
-void Dexlize::Proxy::buy(account_name from, account_name to, asset eos, string memo)
+void Dexlize::Network::buy(account_name from, account_name to, asset eos, string memo)
 {
     // check if the account name is correct.
     // from account cannot be owner and to account must be owner.
@@ -116,7 +116,7 @@ void Dexlize::Proxy::buy(account_name from, account_name to, asset eos, string m
  * function: user can sell stake to gain the eos, and also can set the selled stake beneficiary
  * paraneter: memo - json format e.g. {"onwer": "eosbitportal"}
  **/
-void Dexlize::Proxy::sell(account_name from, account_name to, asset quantity, string memo)
+void Dexlize::Network::sell(account_name from, account_name to, asset quantity, string memo)
 {
     require_auth(from);
 
@@ -142,20 +142,20 @@ void Dexlize::Proxy::sell(account_name from, account_name to, asset quantity, st
 
 extern "C" {
     void apply( uint64_t receiver, uint64_t code, uint64_t action ) {
-        Dexlize::Proxy thiscontract(receiver);
+        Dexlize::Network thiscontract(receiver);
 
         if((code == N(eosio.token)) && (action == N(transfer))) {
-            execute_action(&thiscontract, &Dexlize::Proxy::buy);
+            execute_action(&thiscontract, &Dexlize::Network::buy);
             return;
         } else if ((code != N(eosio.token)) && (action == N(transfer))) {
-            execute_action(&thiscontract, &Dexlize::Proxy::sell);
+            execute_action(&thiscontract, &Dexlize::Network::sell);
             return;
         }
 
         if (code != receiver) return;
 
         switch (action) {
-            EOSIO_API(Dexlize::Proxy, (version))
+            EOSIO_API(Dexlize::Network, (version))
         };
         eosio_exit(0);
     }

@@ -26,6 +26,7 @@ namespace Dexlize {
         void version();
         void buy(account_name from, account_name to, asset quantity, string memo);
         void sell(account_name from, account_name to, asset quantity, string memo);
+        void convert();
 
         private:
         Aux aux;
@@ -45,7 +46,7 @@ namespace Dexlize {
         private:
         string _getMemoValue(const string& key, const map<string, string>& memoMap) const;
     };
-};
+}; // namespace dexlize
 
 #ifdef ABIGEN
 EOSIO_ABI(Dexlize::Proxy, (version))

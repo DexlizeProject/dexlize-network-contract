@@ -46,10 +46,10 @@ std::string dexlize::sample::_get_prop(string prop, string memo)
 
 std::pair<eosio::asset, eosio::asset> dexlize::sample::_sample_sell(asset stake)
 {
-    tb_samples sample_sgt(_self, stake.symbol.name);
+    market_samples sample_sgt(_self, stake.symbol.name);
     eosio_assert(sample_sgt.exists(), "game not found by this symbol name");
 
-    st_sample sample = sample_sgt.get();
+    sample_market sample = sample_sgt.get();
     eosio_assert(now() > sample.start_time, "the token issuance has not yet begun");
 
     asset eos = asset(sample.sell(stake.amount), CORE_SYMBOL);
@@ -66,10 +66,10 @@ std::pair<eosio::asset, eosio::asset> dexlize::sample::_sample_sell(asset stake)
 
 eosio::asset dexlize::sample::_sample_buy(symbol_name name, asset eos)
 {
-    tb_samples sample_sgt(_self, name);
+    market_samples sample_sgt(_self, name);
     eosio_assert(sample_sgt.exists(), "game not found by this symbol name");
 
-    st_sample sample = sample_sgt.get();
+    sample_market sample = sample_sgt.get();
     eosio_assert(now() > sample.start_time, "the token issuance has not yet begun");
 
     asset stake = asset(sample.buy(eos.amount), sample.symbol);
@@ -84,7 +84,7 @@ eosio::asset dexlize::sample::_sample_buy(symbol_name name, asset eos)
 
 void dexlize::sample::version()
 {
-
+    require_auth(_self);
 }
 
 void dexlize::sample::transfer(account_name from, account_name to, asset quantity, string memo)
@@ -94,9 +94,9 @@ void dexlize::sample::transfer(account_name from, account_name to, asset quantit
     eosio_assert(from != to, "cannot transfer to self");
     auto symbol_name = quantity.symbol.name();
 
-    tb_samples sample_sgt(_self, symbol_name);
+    market_samples sample_sgt(_self, symbol_name);
     eosio_assert(sample_sgt.exists(), "sample not found by this symbol name");
-    st_sample sample = sample_sgt.get();
+    sample_market sample = sample_sgt.get();
 
     require_recipient(from);
     require_recipient(to);

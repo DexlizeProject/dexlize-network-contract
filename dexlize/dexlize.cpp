@@ -82,7 +82,7 @@ bool Dexlize::Proxy::_checkSymbol(account_name contractAccount, symbol_name symb
  */
 void Dexlize::Proxy::version()
 {
-
+    require_auth(_self);
 }
 
 /**

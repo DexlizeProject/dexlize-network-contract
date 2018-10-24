@@ -57,7 +57,7 @@ namespace dexlize {
 
         typedef eosio::multi_index<N(accounts), account> accounts;
         typedef eosio::multi_index<N(stat), currency_stats> stats;
-        typedef singleton<N(sample), st_sample> tb_samples;
+        typedef singleton<N(sample), sample_market> market_samples;
 
         private:
         void _init_sample(account_name owner, asset base_eos_quantity, asset maximum_stake, uint32_t lock_up_period, 
@@ -65,7 +65,7 @@ namespace dexlize {
             symbol_type symbol = maximum_stake.symbol;
             eosio_assert(symbol.is_valid(), "invalid symbol name");
 
-            tb_samples sample_sgt(_self, symbol.name());
+            market_samples sample_sgt(_self, symbol.name());
             eosio_assert(!sample_sgt.exists(), "game has started before");
             eosio_assert(base_eos_quantity.symbol == CORE_SYMBOL, "base eos must be core token");
             eosio_assert((base_eos_quantity.amount > 0) && (base_eos_quantity.amount <= MAX_QUANTITY), "invalid amount of base EOS pool");
@@ -76,13 +76,13 @@ namespace dexlize {
             eosio_assert((init_fee_percent >= base_fee_percent) && (init_fee_percent <=99), "invalid init fee percent");
             eosio_assert(start_time <= now() + 180 * 24 * 60 * 60, "the token issuance must be within six months");
 
-            sample_sgt.set(st_sample{
+            sample_sgt.set(sample_market{
                 symbol, owner, base_eos_quantity.amount, maximum_stake.amount, base_eos_quantity.amount, 
                 maximum_stake.amount, lock_up_period, base_fee_percent, init_fee_percent, start_time}, owner);
         }
     };
 
-    struct st_sample {
+    struct sample_market {
         symbol_type symbol;
         account_name owner;
         int128_t eos;
@@ -95,9 +95,9 @@ namespace dexlize {
         uint32_t start_time;
 
         void _check() {
-            eosio_assert(base_eos > 0, "failed to check base_eos should be bigger than zero");
+            eosio_assert(base_eos > 0, "failed to check base eos should be bigger than zero");
             eosio_assert(stake > 0, "failed to check stake should be bigger than zero");
-            eosio_assert(eos >= base_eos, "failed to check eos is bigger than base_eos");
+            eosio_assert(eos >= base_eos, "failed to check eos is bigger than base eos");
             eosio_assert(base_stake >= stake, "failed to check base_stake is bigger than stake");
         }
 

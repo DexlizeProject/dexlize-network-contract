@@ -17,6 +17,9 @@
 
 /*
     The Network contract: 
+    
+    Format of convert:
+    [converter account, from token symbol, converter account, to token symbol...]
 */
 namespace Dexlize {
 
@@ -29,7 +32,7 @@ namespace Dexlize {
         void version();
         void buy(account_name from, account_name to, asset quantity, string memo);
         void sell(account_name from, account_name to, asset quantity, string memo);
-        void convert();
+        void convert(account_name from, asset quantity, string memo);
 
         private:
         Aux aux;

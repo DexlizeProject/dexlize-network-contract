@@ -6,6 +6,7 @@
 #include <eosiolib/eosio.hpp>
 #include <eosiolib/asset.hpp>
 #include <eosiolib/action.hpp>
+#include <vector>
 
 #define SN(X) (string_to_symbol(0, #X) >> 8)
 
@@ -13,3 +14,18 @@
 
 #define ACTION_SELL_TYPE "sell"
 #define ACTION_TRANSFER_TYPE "transfer"
+
+namespace Dexlize {
+    using namespace eosio;
+    using namespace std;
+
+    // @abi table accounts i64
+    struct account {
+        account_name name;
+        vector<extended_asset> tokens;
+
+        uint64_t primary_key() const {return name;}
+    }
+
+    typedef multi_index<N(accounts), account> accounts; 
+}

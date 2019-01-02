@@ -139,24 +139,3 @@ void Dexlize::Network::sell(account_name from, account_name to, asset quantity, 
     string owner = aux.getOwnerAccount(memoMap); 
     _sendAction(contractAccount, contractAccount, quantity, ACTION_SELL_TYPE, "-owner:" + owner);
 }
-
-extern "C" {
-    void apply( uint64_t receiver, uint64_t code, uint64_t action ) {
-        Dexlize::Network thiscontract(receiver);
-
-        if((code == N(eosio.token)) && (action == N(transfer))) {
-            execute_action(&thiscontract, &Dexlize::Network::buy);
-            return;
-        } else if ((code != N(eosio.token)) && (action == N(transfer))) {
-            execute_action(&thiscontract, &Dexlize::Network::sell);
-            return;
-        }
-
-        if (code != receiver) return;
-
-        switch (action) {
-            EOSIO_API(Dexlize::Network, (version))
-        };
-        eosio_exit(0);
-    }
-}

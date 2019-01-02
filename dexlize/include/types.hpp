@@ -26,6 +26,13 @@ namespace Dexlize {
 
         uint64_t primary_key() const {return name;}
     }
+    
+    struct st_transfer {
+        account_name from;
+        account_name to;
+        asset quantity;
+        string memo;
+    };
 
     typedef multi_index<N(accounts), account> accounts; 
 }

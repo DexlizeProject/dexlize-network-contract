@@ -2,8 +2,8 @@
  *  @file
  *  @copyright defined in Dexlize/LICENSE
  */
-#include "dexlize.hpp"
-#include "utils/utils.hpp"
+#include "../include/dexlize.hpp"
+#include "../utils/utils.hpp"
 
 std::string Dexlize::Aux::_getMemoValue(const string& key, const map<string, string>& memoMap) const
 {

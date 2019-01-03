@@ -26,7 +26,18 @@ namespace Dexlize {
 
         uint64_t primary_key() const {return name;}
     }
-    
+
+    // @abi table accounts i64
+    struct bill {
+        uint64_t id;
+        string type;
+        account_name name;
+        asset quantity;
+        account_name contract;
+        
+        uint64_t primary_key() const {return id;}
+    }
+
     struct st_transfer {
         account_name from;
         account_name to;
@@ -34,5 +45,6 @@ namespace Dexlize {
         string memo;
     };
 
-    typedef multi_index<N(accounts), account> accounts; 
+    typedef multi_index<N(accounts), account> accounts;
+    typedef multi_index<N(bills), bill> bills; 
 }

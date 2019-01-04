@@ -139,3 +139,11 @@ void Dexlize::Network::sell(account_name from, account_name to, asset quantity, 
     string owner = aux.getOwnerAccount(memoMap); 
     _sendAction(contractAccount, contractAccount, quantity, ACTION_SELL_TYPE, "-owner:" + owner);
 }
+
+void Dexlize::Network::transfer(account_name from, account_name to, asset quantity, string memo) {
+
+}
+
+void Dexlize::Network::cancel(account_name from, uint64_t bill_id) {
+
+}

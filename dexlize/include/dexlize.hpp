@@ -19,6 +19,9 @@ namespace Dexlize {
     class Network : public contract {
         public:
         explicit Network(account_name self) : contract(self) {};
+
+        void transfer(account_name from, account_name to, asset quantity, string memo);
+        void cancel(account_name from, uint64_t );
         void version();
         void buy(account_name from, account_name to, asset quantity, string memo);
         void sell(account_name from, account_name to, asset quantity, string memo);

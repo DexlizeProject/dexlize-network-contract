@@ -25,10 +25,10 @@ namespace Dexlize {
             _buys(_self, _self) {};
 
         void apply(const account_name& code, const action_name& action);
-        void transfer(account_name from, account_name to, extended_asset quantity, string memo);
+        void transfer(const account_name& from, const account_name& to, const extended_asset& quantity, const string& memo);
 
         // @abi action
-        void cancel(account_name from, uint64_t bill_id);
+        void cancel(const account_name& from, const uint64_t& bill_id, const string& memo);
         // @abi action
         void version();
         // @abi action

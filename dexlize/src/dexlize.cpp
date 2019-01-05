@@ -151,17 +151,17 @@ void Dexlize::Network::apply(const account_name& code, const action_name& action
 
     if (code != _self || action == N(transfer)) return;
     switch (action) {
-        EOSIO_API(xprime::manage, (consume)(revoke));
+        EOSIO_API(Dexlize::Network, (cancel)(version));
         default:
         eosio_assert(false, "Not contract action cannot be accepted");
         break;
     };
 }
 
-void Dexlize::Network::transfer(account_name from, account_name to, extended_asset quantity, string memo) {
+void Dexlize::Network::transfer(const account_name& from, const account_name& to, const extended_asset& quantity, const string& memo) {
 
 }
 
-void Dexlize::Network::cancel(account_name from, uint64_t bill_id) {
+void Dexlize::Network::cancel(const account_name& from, const uint64_t& bill_id, const string& memo) {
 
 }

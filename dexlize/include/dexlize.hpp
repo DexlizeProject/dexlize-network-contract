@@ -20,11 +20,18 @@ namespace Dexlize {
         public:
         explicit Network(account_name self) : contract(self) {};
 
-        void transfer(account_name from, account_name to, asset quantity, string memo);
-        void cancel(account_name from, uint64_t );
+        void apply(const account_name& code, const action_name& action);
+        void transfer(account_name from, account_name to, extended_asset quantity, string memo);
+
+        // @abi action
+        void cancel(account_name from, uint64_t bill_id);
+        // @abi action
         void version();
+        // @abi action
         void buy(account_name from, account_name to, asset quantity, string memo);
+        // @abi action
         void sell(account_name from, account_name to, asset quantity, string memo);
+        // @abi action
         void convert(account_name from, asset quantity, string memo);
 
         private:
@@ -48,22 +55,9 @@ namespace Dexlize {
 }; // namespace dexlize
 
 extern "C" {
-    void apply( uint64_t receiver, uint64_t code, uint64_t action ) {
-        Dexlize::Network thiscontract(receiver);
-
-        if((code == N(eosio.token)) && (action == N(transfer))) {
-            execute_action(&thiscontract, &Dexlize::Network::buy);
-            return;
-        } else if ((code != N(eosio.token)) && (action == N(transfer))) {
-            execute_action(&thiscontract, &Dexlize::Network::sell);
-            return;
-        }
-
-        if (code != receiver) return;
-
-        switch (action) {
-            EOSIO_API(Dexlize::Network, (version))
-        };
+    [[noreturn]] void apply(uint64_t receiver, uint64_t code, uint64_t action) {
+        xprime::manage thiscontract(receiver);
+        thiscontract.apply(code, action);
         eosio_exit(0);
     }
 }

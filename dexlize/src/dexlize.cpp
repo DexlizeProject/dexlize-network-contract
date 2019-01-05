@@ -140,7 +140,25 @@ void Dexlize::Network::sell(account_name from, account_name to, asset quantity, 
     _sendAction(contractAccount, contractAccount, quantity, ACTION_SELL_TYPE, "-owner:" + owner);
 }
 
-void Dexlize::Network::transfer(account_name from, account_name to, asset quantity, string memo) {
+void Dexlize::Network::apply(const account_name& code, const action_name& action) {
+    auto &thiscontract = *this;
+
+    if (action == N(transfer)) {
+        auto transfer_data = unpack_action_data<st_transfer>();
+        transfer(transfer_data.from, transfer_data.to, extended_asset(transfer_data.quantity, code), transfer_data.memo);
+        return;
+    }
+
+    if (code != _self || action == N(transfer)) return;
+    switch (action) {
+        EOSIO_API(xprime::manage, (consume)(revoke));
+        default:
+        eosio_assert(false, "Not contract action cannot be accepted");
+        break;
+    };
+}
+
+void Dexlize::Network::transfer(account_name from, account_name to, extended_asset quantity, string memo) {
 
 }
 

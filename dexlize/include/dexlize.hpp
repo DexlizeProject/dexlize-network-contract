@@ -18,7 +18,11 @@ namespace Dexlize {
 
     class Network : public contract {
         public:
-        explicit Network(account_name self) : contract(self) {};
+        explicit Network(account_name self) : 
+            contract(self), 
+            _accounts(_self, _self), 
+            _sells(_self, _self),
+            _buys(_self, _self) {};
 
         void apply(const account_name& code, const action_name& action);
         void transfer(account_name from, account_name to, extended_asset quantity, string memo);
@@ -40,6 +44,11 @@ namespace Dexlize {
 
         void _sendAction(account_name contract, account_name to, asset quantity, string actionStr, string memo);
         bool _checkSymbol(account_name contractAccount, symbol_name symbolName);
+
+        private:
+        accounts _accounts;
+        sells _sells;
+        buys _buys;
     };
 
     class Aux {

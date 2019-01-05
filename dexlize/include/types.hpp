@@ -22,19 +22,29 @@ namespace Dexlize {
     // @abi table accounts i64
     struct account {
         account_name name;
-        vector<extended_asset> tokens;
+        vector<uint64_t> sells;
+        vector<uint64_t> buys;
 
         uint64_t primary_key() const {return name;}
     }
 
-    // @abi table accounts i64
-    struct bill {
+    // @abi table sells i64
+    struct sell_bill {
         uint64_t id;
-        string type;
         account_name name;
         asset quantity;
         account_name contract;
-        
+
+        uint64_t primary_key() const {return id;}
+    }
+
+    // @abi table buys i64
+    struct buy_bill {
+        uint64_t id;
+        account_name name;
+        asset quantity;
+        account_name contract;
+
         uint64_t primary_key() const {return id;}
     }
 
@@ -46,5 +56,6 @@ namespace Dexlize {
     };
 
     typedef multi_index<N(accounts), account> accounts;
-    typedef multi_index<N(bills), bill> bills; 
+    typedef multi_index<N(sells), sell_bill> sells;
+    typedef multi_index<N(buys), buy_bill> buys;
 }

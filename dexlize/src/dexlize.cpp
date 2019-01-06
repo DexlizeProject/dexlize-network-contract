@@ -2,6 +2,7 @@
  *  @file
  *  @copyright defined in Dexlize/LICENSE
  */
+#include <algorithm>
 #include "../include/dexlize.hpp"
 #include "../utils/utils.hpp"
 
@@ -178,9 +179,15 @@ void Dexlize::Network::cancel(const account_name& from, const uint64_t& bill_id,
     eosio_assert(memo == "sell" || memo == "buy", "the format of memo is not correct");
     if (memo == "sell") {
         eosio_assert(find(iter->sells.begin(), iter->sells.end(), [](auto a) {return a == bill_id;})
-        != iter->sells.end(), "the bill id is not exist in the sell bills");
+        != iter->sells.end(), "the bill id is not exist in the sell bills of current account");
+        _accounts.modify(iter, 0, [&](auto& a) {
+            find_if(iter->sells.begin(), iter->sells.end(), [](auto a) {return a == bill_id;}
+        });
     } else (memo == "buy") {
         eosio_assert(find(iter->buys.begin(), iter->buys.end(), [](auto a) {return a == bill_id;})
-        != iter->buys.end(), "the bill id is not exist in the buy bills");
+        != iter->buys.end(), "the bill id is not exist in the buy bills of current account");
+        _accounts.modify(iter, 0, [&](auto& a) {
+
+        });
     }
 }

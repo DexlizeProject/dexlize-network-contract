@@ -159,9 +159,28 @@ void Dexlize::Network::apply(const account_name& code, const action_name& action
 }
 
 void Dexlize::Network::transfer(const account_name& from, const account_name& to, const extended_asset& quantity, const string& memo) {
+    require_auth(from);
 
+    // check the account of from and to
+    if (from == _self && to != _self) return;
+    eosio_assert(quantity.is_valid(), "invalid quantity");
+    eosio_assert(quantity.amount > 0, "must transfer positive quantity");
+    eosio_assert(memo.size() <= 256, "memo has more than 256 bytes");
 }
 
 void Dexlize::Network::cancel(const account_name& from, const uint64_t& bill_id, const string& memo) {
+    require_auth(from);
 
+    // check the memo and bill id
+    eosio_assert(memo.size() <= 256, "memo has more than 256 bytes");
+    auto iter = _accounts.find(from);
+    eosio_assert(iter != _accounts.end(), "current account is not exist");
+    eosio_assert(memo == "sell" || memo == "buy", "the format of memo is not correct");
+    if (memo == "sell") {
+        eosio_assert(find(iter->sells.begin(), iter->sells.end(), [](auto a) {return a == bill_id;})
+        != iter->sells.end(), "the bill id is not exist in the sell bills");
+    } else (memo == "buy") {
+        eosio_assert(find(iter->buys.begin(), iter->buys.end(), [](auto a) {return a == bill_id;})
+        != iter->buys.end(), "the bill id is not exist in the buy bills");
+    }
 }

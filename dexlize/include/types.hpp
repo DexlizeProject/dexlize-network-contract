@@ -9,6 +9,7 @@
 #include <vector>
 
 #define SN(X) (string_to_symbol(0, #X) >> 8)
+#define EOS_SYMBOL S(4, EOS)
 
 #define GOD_ACCOUNT "eostestbp121"
 
@@ -32,8 +33,8 @@ namespace Dexlize {
     struct sell_bill {
         uint64_t id;
         account_name name;
-        asset quantity;
-        account_name contract;
+        extended_asset quantity;
+        asset amount;
 
         uint64_t primary_key() const {return id;}
     }
@@ -42,8 +43,8 @@ namespace Dexlize {
     struct buy_bill {
         uint64_t id;
         account_name name;
-        asset quantity;
-        account_name contract;
+        extended_asset quantity;
+        asset amount;
 
         uint64_t primary_key() const {return id;}
     }
@@ -55,7 +56,16 @@ namespace Dexlize {
         string memo;
     };
 
+    // @abi table global i64
+    struct st_global {
+        uint64_t sell_id;
+        uint64_t buy_id;
+
+        uint64_t primary_key() const {return sell_id;}
+    };
+    
     typedef multi_index<N(accounts), account> accounts;
     typedef multi_index<N(sells), sell_bill> sells;
     typedef multi_index<N(buys), buy_bill> buys;
+    typedef singleton<N(global), st_global> global;
 }

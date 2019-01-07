@@ -115,7 +115,7 @@ void Dexlize::Network::buy(account_name from, account_name to, asset eos, string
 
 /**
  * function: user can sell stake to gain the eos, and also can set the selled stake beneficiary
- * paraneter: memo - json format e.g. {"onwer": "eosbitportal"}
+ * paraneter: memo - json format e.g. {"owner": "eosbitportal"}
  **/
 void Dexlize::Network::sell(account_name from, account_name to, asset quantity, string memo)
 {
@@ -159,6 +159,10 @@ void Dexlize::Network::apply(const account_name& code, const action_name& action
     };
 }
 
+/**
+ * function: user can sell and buy token in the network of dexlize
+ * paraneter: memo - json format e.g. {"type": "sell", "amount": "1000.0000", "symbol": "EOS"}
+ **/
 void Dexlize::Network::transfer(const account_name& from, const account_name& to, const extended_asset& quantity, const string& memo) {
     require_auth(from);
 
@@ -167,8 +171,41 @@ void Dexlize::Network::transfer(const account_name& from, const account_name& to
     eosio_assert(quantity.is_valid(), "invalid quantity");
     eosio_assert(quantity.amount > 0, "must transfer positive quantity");
     eosio_assert(memo.size() <= 256, "memo has more than 256 bytes");
+
+    // parse the memo of json fomat to get the transfer type
+    Utils utils;
+    map<string, string> memoMap;
+    eosio_assert(!utils.parseJson(memo, memoMap), "invalid memo format, the memo must be the format of json");
+    auto type_ptr = memoMap.find("type");
+    eosio_assert(type_ptr != memoMap.end(), "the bill type is not exist in the memo");
+    eosio_assert(type_ptr->second == "sell" || type_ptr->second == "buy", "the bill type must be sell or buy");
+    if (type_ptr->second == "sell") {
+        string symbol = emoMap.find("symbol")->second;
+        eosio_assert(symbol == "EOS", "only supported the EOS token in the sell bill currently");
+        double amount = stod(memoMap.find("amount")->second) * 10000;
+        eosio_assert(amount > 1, "the order amount must greater than zero");
+        _sells.emplace_back(from, [&](auto& a) {
+            a.id = _next_sell_id();
+            a.name = from;
+            a.quantity = quantity;
+            a.amount = asset(amount, s(symbol, 4));
+        });
+    } else if (type_ptr->second == "buy") {
+        eosio_assert(quanity.contract == N(eosio.code), "must pay with EOS token by eosio.code");
+        eosio_assert(quanity.symbol == EOS_SYMBOL, "must pay with EOS token");
+        _buys.emplace_back(from, [&](auto& a) {
+            a.id = _next_buy_id();
+            a.name = from;
+            a.quantity = extended_asset();
+            a.amount = asset(quantity.amount, quantity.symbol);
+        });
+    }
 }
 
+/**
+ * function: user can cancel bill of sell and buy by bill id in the network of dexlize
+ * paraneter: memo - json format e.g. {sell/buy}
+ **/
 void Dexlize::Network::cancel(const account_name& from, const uint64_t& bill_id, const string& memo) {
     require_auth(from);
 

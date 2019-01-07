@@ -22,7 +22,8 @@ namespace Dexlize {
             contract(self), 
             _accounts(_self, _self), 
             _sells(_self, _self),
-            _buys(_self, _self) {};
+            _buys(_self, _self),
+            _global(_self, _self) {};
 
         void apply(const account_name& code, const action_name& action);
         void transfer(const account_name& from, const account_name& to, const extended_asset& quantity, const string& memo);
@@ -45,10 +46,27 @@ namespace Dexlize {
         void _sendAction(account_name contract, account_name to, asset quantity, string actionStr, string memo);
         bool _checkSymbol(account_name contractAccount, symbol_name symbolName);
 
+        uint64_t _next_sell_id() {
+            global global = _global.get_or_default(
+                global{.sell_id = 0, .buy_id = 0});
+            global.sell_id += 1;
+            _global.set(global, _self);
+            return global.sell_id;
+        }
+
+        uint64_t _next_buy_id() {
+            global global = _global.get_or_default(
+                global{.sell_id = 0, .buy_id = 0});
+            global.buy_id += 1;
+            _global.set(global, _self);
+            return global.buy_id;
+        }
+        
         private:
         accounts _accounts;
         sells _sells;
         buys _buys;
+        global _global;
     };
 
     class Aux {

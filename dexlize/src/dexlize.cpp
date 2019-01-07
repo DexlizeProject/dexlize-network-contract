@@ -178,16 +178,28 @@ void Dexlize::Network::cancel(const account_name& from, const uint64_t& bill_id,
     eosio_assert(iter != _accounts.end(), "current account is not exist");
     eosio_assert(memo == "sell" || memo == "buy", "the format of memo is not correct");
     if (memo == "sell") {
-        eosio_assert(find(iter->sells.begin(), iter->sells.end(), [](auto a) {return a == bill_id;})
-        != iter->sells.end(), "the bill id is not exist in the sell bills of current account");
+        // remove the selled bill id of current account
+        auto bill_ptr = find(iter->sells.begin(), iter->sells.end(), bill_id);
+        eosio_assert(bill_ptr != iter->sells.end(), "the bill id is not exist in the sell bills of current account");
         _accounts.modify(iter, 0, [&](auto& a) {
-            find_if(iter->sells.begin(), iter->sells.end(), [](auto a) {return a == bill_id;}
+            a.sells.erase(bill_ptr);
         });
-    } else (memo == "buy") {
-        eosio_assert(find(iter->buys.begin(), iter->buys.end(), [](auto a) {return a == bill_id;})
-        != iter->buys.end(), "the bill id is not exist in the buy bills of current account");
-        _accounts.modify(iter, 0, [&](auto& a) {
 
+        // remove the selled bill
+        auto sell_ptr = _sells.find(bill_id);
+        eosio_assert(sell_ptr != _sells.end(), "the selled bill is not exist");
+        _sells.erase(sell_ptr);
+    } else (memo == "buy") {
+        // remove the bought bill id of current account
+        auto bill_ptr = find(iter->buys.begin(), iter->buys.end(), bill_id);
+        eosio_assert(bill_ptr != iter->buys.end(), "the bill id is not exist in the buy bills of current account");
+        _accounts.modify(iter, 0, [&](auto& a) {
+            a.buys.erase(bill_ptr);
         });
+
+        // remove the bought bill
+        auto buy_ptr = _buys.find(bill_id);
+        eosio_assert(buy_ptr != _buys.end(), "the bought bill is not exist");
+        _buys.erase(buy_ptr);
     }
 }

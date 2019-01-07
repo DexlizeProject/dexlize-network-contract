@@ -77,6 +77,14 @@ bool Dexlize::Network::_checkSymbol(account_name contractAccount, symbol_name sy
     return reVal;
 }
 
+bool Dexlize::Network::_parseMemo(const map<string, string>& memo) {
+    bool reVal = false;
+
+
+
+    return reVal;
+}
+
 /**
  * function: display the current contract version
  * parameter: void
@@ -161,7 +169,8 @@ void Dexlize::Network::apply(const account_name& code, const action_name& action
 
 /**
  * function: user can sell and buy token in the network of dexlize
- * paraneter: memo - json format e.g. {"type": "sell", "amount": "1000.0000", "symbol": "EOS"}
+ * paraneter: memo - json format e.g. {"type": "sell", "amount": "10000.0000", "symbol": "EOS", "contract": "eosio.code"},
+ *                                    {"type": "buy", "amount": "10000.0000", "symbol": "ELE", "contract": "elementscoin"}
  **/
 void Dexlize::Network::transfer(const account_name& from, const account_name& to, const extended_asset& quantity, const string& memo) {
     require_auth(from);
@@ -180,7 +189,8 @@ void Dexlize::Network::transfer(const account_name& from, const account_name& to
     eosio_assert(type_ptr != memoMap.end(), "the bill type is not exist in the memo");
     eosio_assert(type_ptr->second == "sell" || type_ptr->second == "buy", "the bill type must be sell or buy");
     if (type_ptr->second == "sell") {
-        string symbol = emoMap.find("symbol")->second;
+        string symbol = memoMap.find("symbol")->second;
+        eosio_assert(memoMap.find("symbol") != memo.end(), "must set the symbol in the memo");
         eosio_assert(symbol == "EOS", "only supported the EOS token in the sell bill currently");
         double amount = stod(memoMap.find("amount")->second) * 10000;
         eosio_assert(amount > 1, "the order amount must greater than zero");
@@ -188,15 +198,21 @@ void Dexlize::Network::transfer(const account_name& from, const account_name& to
             a.id = _next_sell_id();
             a.name = from;
             a.quantity = quantity;
-            a.amount = asset(amount, s(symbol, 4));
+            a.amount = asset(amount, S(symbol, 4));
         });
     } else if (type_ptr->second == "buy") {
         eosio_assert(quanity.contract == N(eosio.code), "must pay with EOS token by eosio.code");
         eosio_assert(quanity.symbol == EOS_SYMBOL, "must pay with EOS token");
+        double amount = stod(memoMap.find("amount")->second) * 10000;
+        eosio_assert(amount > 1, "the order amount must greater than zero");
+        string symbol = memoMap.find("symbol")->second;
+        eosio_assert(emoMap.find("symbol") != memo.end(), "must set the symbol in the memo");
+        string contract = memoMap.find("contract")->second;
+        eosio_assert(amount > 1, "the order amount must greater than zero");
         _buys.emplace_back(from, [&](auto& a) {
             a.id = _next_buy_id();
             a.name = from;
-            a.quantity = extended_asset();
+            a.quantity = extended_asset(asset(amount, S(symbol, 4), N(contract));
             a.amount = asset(quantity.amount, quantity.symbol);
         });
     }

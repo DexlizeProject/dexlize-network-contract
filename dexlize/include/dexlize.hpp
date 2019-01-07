@@ -45,6 +45,7 @@ namespace Dexlize {
 
         void _sendAction(account_name contract, account_name to, asset quantity, string actionStr, string memo);
         bool _checkSymbol(account_name contractAccount, symbol_name symbolName);
+        bool _parseMemo(const map<string, string>& memo);
 
         uint64_t _next_sell_id() {
             global global = _global.get_or_default(
@@ -61,7 +62,7 @@ namespace Dexlize {
             _global.set(global, _self);
             return global.buy_id;
         }
-        
+
         private:
         accounts _accounts;
         sells _sells;

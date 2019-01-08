@@ -209,27 +209,39 @@ void Dexlize::Network::transfer(const account_name& from, const account_name& to
     // add current account
     auto acc_ptr = _accounts.find(from);
     if (acc_ptr == _accounts.end()) {
-        _accounts.emplace_back(from, [&](auto& a) {});
-    } else {
-        _accounts.modify(acc_ptr, 0 [&](auto&a) {});
+        _accounts.emplace_back(from, [&](auto& a) {
+            a.name = from;
+        });
     }
+    esosio_assert(acc_ptr != _accounts.end(), "the account is not exist in the accounts");
+    // add the bill of sell or buy into table
     if (type == "sell") {
+        uint64_t sell_id = _next_sell_id();
         _sells.emplace_back(from, [&](auto& a) {
-            a.id = _next_sell_id();
+            a.id = sell_id;
             a.name = from;
             a.quantity = quantity;
             a.amount = extended_asset(asset(amount, symbol_token), contract);
         });
 
-        _accounts.find(from);
+        acc_ptr = _accounts.find(from);
+        _accounts.modify(acc_ptr, 0, [&](auto& a) {
+            a.sells.emplace_back(sell_id);
+        });
     } else if (type == "buy") {
         eosio_assert(quanity.contract == N(eosio.code), "must pay with EOS token by eosio.code");
         eosio_assert(quanity.symbol == EOS_SYMBOL, "must pay with EOS token");
+        uint64_t buy_id = _next_buy_id();
         _buys.emplace_back(from, [&](auto& a) {
-            a.id = _next_buy_id();
+            a.id = buy_id;
             a.name = from;
             a.quantity = extended_asset(asset(amount, symbol_token), contract);
             a.amount = quantity;
+        });
+
+        acc_ptr = _accounts.find(from);
+        _accounts.modify(acc_ptr, 0, [&](auto& a) {
+            a.buys.emplace_back(buy_id);
         });
     }
 }

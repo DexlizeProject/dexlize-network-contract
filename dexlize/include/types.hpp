@@ -6,6 +6,7 @@
 #include <eosiolib/eosio.hpp>
 #include <eosiolib/asset.hpp>
 #include <eosiolib/action.hpp>
+#include <eosiolib/singleton.hpp>
 #include <vector>
 
 #define SN(X) (string_to_symbol(0, #X) >> 8)
@@ -27,7 +28,7 @@ namespace Dexlize {
         vector<uint64_t> buys;
 
         uint64_t primary_key() const {return name;}
-    }
+    };
 
     // @abi table sells i64
     struct sell_bill {
@@ -37,7 +38,7 @@ namespace Dexlize {
         extended_asset amount;
 
         uint64_t primary_key() const {return id;}
-    }
+    };
 
     // @abi table buys i64
     struct buy_bill {
@@ -47,7 +48,7 @@ namespace Dexlize {
         extended_asset amount;
 
         uint64_t primary_key() const {return id;}
-    }
+    };
 
     struct st_transfer {
         account_name from;

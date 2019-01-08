@@ -77,7 +77,7 @@ bool Dexlize::Network::_checkSymbol(account_name contractAccount, symbol_name sy
     return reVal;
 }
 
-bool Dexlize::Network::_parseMemo(const map<string, string>& memo，const string& type, const symbol& symbol, const double& amount, const account_name& contract) {
+bool Dexlize::Network::_parseMemo(const map<string, string>& memoMap, const string& type, const symbol& symbol, const double& amount, const account_name& contract) {
     bool reVal = false;
 
     auto type_ptr = memoMap.find("type");
@@ -209,15 +209,15 @@ void Dexlize::Network::transfer(const account_name& from, const account_name& to
     // add current account
     auto acc_ptr = _accounts.find(from);
     if (acc_ptr == _accounts.end()) {
-        _accounts.emplace_back(from, [&](auto& a) {
+        _accounts.emplace(from, [&](auto& a) {
             a.name = from;
         });
     }
-    esosio_assert(acc_ptr != _accounts.end(), "the account is not exist in the accounts");
+    eosio_assert(acc_ptr != _accounts.end(), "the account is not exist in the accounts");
     // add the bill of sell or buy into table
     if (type == "sell") {
         uint64_t sell_id = _next_sell_id();
-        _sells.emplace_back(from, [&](auto& a) {
+        _sells.emplace(from, [&](auto& a) {
             a.id = sell_id;
             a.name = from;
             a.quantity = quantity;
@@ -229,10 +229,10 @@ void Dexlize::Network::transfer(const account_name& from, const account_name& to
             a.sells.emplace_back(sell_id);
         });
     } else if (type == "buy") {
-        eosio_assert(quanity.contract == N(eosio.code), "must pay with EOS token by eosio.code");
-        eosio_assert(quanity.symbol == EOS_SYMBOL, "must pay with EOS token");
+        eosio_assert(quantity.contract == N(eosio.code), "must pay with EOS token by eosio.code");
+        eosio_assert(quantity.symbol == EOS_SYMBOL, "must pay with EOS token");
         uint64_t buy_id = _next_buy_id();
-        _buys.emplace_back(from, [&](auto& a) {
+        _buys.emplace(from, [&](auto& a) {
             a.id = buy_id;
             a.name = from;
             a.quantity = extended_asset(asset(amount, symbol_token), contract);
@@ -270,7 +270,7 @@ void Dexlize::Network::cancel(const account_name& from, const uint64_t& bill_id,
         auto sell_ptr = _sells.find(bill_id);
         eosio_assert(sell_ptr != _sells.end(), "the selled bill is not exist");
         _sells.erase(sell_ptr);
-    } else (memo == "buy") {
+    } else if (memo == "buy") {
         // remove the bought bill id of current account
         auto bill_ptr = find(iter->buys.begin(), iter->buys.end(), bill_id);
         eosio_assert(bill_ptr != iter->buys.end(), "the bill id is not exist in the buy bills of current account");

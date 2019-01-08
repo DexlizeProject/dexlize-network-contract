@@ -16,6 +16,17 @@ namespace Dexlize {
     using namespace eosio;
     using namespace std;
 
+    class Aux {
+        public:
+        account_name getContractAccount(const map<string, string>& memoMap) const;
+        symbol_name getSymbolName(const map<string, string>& memoMap) const;
+        string getOwnerAccount(const map<string, string>& memoMap) const;
+        string getActionMemo(const symbol_name& symbolName, const string& owner) const;
+
+        private:
+        string _getMemoValue(const string& key, const map<string, string>& memoMap) const;
+    };
+
     class Network : public contract {
         public:
         explicit Network(account_name self) : 
@@ -48,16 +59,16 @@ namespace Dexlize {
         bool _parseMemo(const map<string, string>& memo);
 
         uint64_t _next_sell_id() {
-            global global = _global.get_or_default(
-                global{.sell_id = 0, .buy_id = 0});
+            st_global global = _global.get_or_default(
+                st_global{.sell_id = 0, .buy_id = 0});
             global.sell_id += 1;
             _global.set(global, _self);
             return global.sell_id;
         }
 
         uint64_t _next_buy_id() {
-            global global = _global.get_or_default(
-                global{.sell_id = 0, .buy_id = 0});
+            st_global global = _global.get_or_default(
+                st_global{.sell_id = 0, .buy_id = 0});
             global.buy_id += 1;
             _global.set(global, _self);
             return global.buy_id;
@@ -69,22 +80,11 @@ namespace Dexlize {
         buys _buys;
         global _global;
     };
-
-    class Aux {
-        public:
-        account_name getContractAccount(const map<string, string>& memoMap) const;
-        symbol_name getSymbolName(const map<string, string>& memoMap) const;
-        string getOwnerAccount(const map<string, string>& memoMap) const;
-        string getActionMemo(const symbol_name& symbolName, const string& owner) const;
-
-        private:
-        string _getMemoValue(const string& key, const map<string, string>& memoMap) const;
-    };
 }; // namespace dexlize
 
 extern "C" {
     [[noreturn]] void apply(uint64_t receiver, uint64_t code, uint64_t action) {
-        xprime::manage thiscontract(receiver);
+        Dexlize::Network thiscontract(receiver);
         thiscontract.apply(code, action);
         eosio_exit(0);
     }

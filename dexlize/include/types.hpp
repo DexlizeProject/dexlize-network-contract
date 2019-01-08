@@ -34,7 +34,7 @@ namespace Dexlize {
         uint64_t id;
         account_name name;
         extended_asset quantity;
-        asset amount;
+        extended_asset amount;
 
         uint64_t primary_key() const {return id;}
     }
@@ -44,7 +44,7 @@ namespace Dexlize {
         uint64_t id;
         account_name name;
         extended_asset quantity;
-        asset amount;
+        extended_asset amount;
 
         uint64_t primary_key() const {return id;}
     }
@@ -63,7 +63,7 @@ namespace Dexlize {
 
         uint64_t primary_key() const {return sell_id;}
     };
-    
+
     typedef multi_index<N(accounts), account> accounts;
     typedef multi_index<N(sells), sell_bill> sells;
     typedef multi_index<N(buys), buy_bill> buys;

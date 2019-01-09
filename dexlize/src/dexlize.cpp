@@ -226,7 +226,7 @@ void Dexlize::Network::transfer(const account_name& from, const account_name& to
             a.sells.emplace_back(sell_id);
         });
     } else if (type == "buy") {
-        eosio_assert(quantity.contract == N(eosio.code), "must pay with EOS token by eosio.code");
+        eosio_assert(quantity.contract == N(eosio.token), "must pay with EOS token by eosio.token");
         eosio_assert(quantity.symbol == EOS_SYMBOL, "must pay with EOS token");
         uint64_t buy_id = _next_buy_id();
         _buys.emplace(from, [&](auto& a) {

@@ -6,7 +6,7 @@
 
 ### Resting order bought Example
 you can add order bought by transfering the token of EOS, meanwhile the token need to be bought that 
-would be set in the memo 
+would be set in the memo. 
 
 ```js
 contract: eosio.token
@@ -21,7 +21,7 @@ data: {
 
 ### Resting order selled Example
 you can add the order selled by transfering the token that want to be selled, meanwhile the eos token
-you want to be cost that would be set in the memo
+you want to be cost that would be set in the memo.
 
 ```js
 contract: eosio.token
@@ -35,7 +35,7 @@ data: {
 ```
 
 ### Cancel order selled Example
-you can cancel the order selled by setting the type of bill in the memo
+you can cancel the order selled by setting the type of bill in the memo.
 
 ```js
 contract: dexlizenetwk
@@ -48,7 +48,7 @@ data: {
 ```
 
 ### Cancel order bought Example
-you can cancel the order bought by setting the type of bill in the memo
+you can cancel the order bought by setting the type of bill in the memo.
 
 ```js
 contract: dexlizenetwk

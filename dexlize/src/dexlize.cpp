@@ -9,11 +9,8 @@
 std::string Dexlize::Aux::_getMemoValue(const string& key, const map<string, string>& memoMap) const
 {
     auto iter = memoMap.find(key);
-    if (iter != memoMap.end()) 
-    {
-        return iter->second;
-    }
-    eosio_assert(iter == memoMap.end(), "invalid memo format");
+    eosio_assert(iter != memoMap.end(), "invalid memo format");
+    return iter->second;
 }
 
 eosio::symbol_name Dexlize::Aux::getSymbolName(const map<string, string>& memoMap) const
@@ -77,7 +74,7 @@ bool Dexlize::Network::_checkSymbol(account_name contractAccount, symbol_name sy
     return reVal;
 }
 
-bool Dexlize::Network::_parseMemo(const map<string, string>& memoMap, const string& type, const symbol& symbol, const double& amount, const account_name& contract) {
+bool Dexlize::Network::_parseMemo(const map<string, string>& memoMap, string& type, symbol_name& symbol, double& amount, account_name& contract) {
     bool reVal = false;
 
     auto type_ptr = memoMap.find("type");
@@ -86,17 +83,17 @@ bool Dexlize::Network::_parseMemo(const map<string, string>& memoMap, const stri
     eosio_assert(type == "sell" || type == "buy", "the bill type must be sell or buy");
 
     auto symbol_ptr = memoMap.find("symbol");
-    eosio_assert(symbol_ptr != memo.end(), "must set the symbol in the memo");
-    symbol = S(symbol_ptr->second, 4);
+    eosio_assert(symbol_ptr != memoMap.end(), "must set the symbol in the memo");
+    symbol = string_to_symbol(4, symbol_ptr->second.c_str());
 
     auto amount_ptr = memoMap.find("amount");
-    eosio_assert(amount_ptr != memo.end(), "must set the amount in the memo");
+    eosio_assert(amount_ptr != memoMap.end(), "must set the amount in the memo");
     amount = stod(amount_ptr->second) * 10000;
     eosio_assert(amount > 1, "the order amount must greater than zero");
 
     auto contract_ptr = memoMap.find("contract");
-    eosio_assert(contract_ptr != memo.end(), "must set the contract in the memo");
-    contract = N(contract_ptr->second);
+    eosio_assert(contract_ptr != memoMap.end(), "must set the contract in the memo");
+    contract = string_to_name(contract_ptr->second.c_str());
 
     return true;
 }
@@ -202,10 +199,10 @@ void Dexlize::Network::transfer(const account_name& from, const account_name& to
     map<string, string> memoMap;
     eosio_assert(!utils.parseJson(memo, memoMap), "invalid memo format, the memo must be the format of json");
     string type;
-    symbol symbol_token;
+    symbol_name symbol;
     double amount;
     account_name contract;
-    _parseMemo(memoMap, type, symbol_token, amount, contract);
+    _parseMemo(memoMap, type, symbol, amount, contract);
     // add current account
     auto acc_ptr = _accounts.find(from);
     if (acc_ptr == _accounts.end()) {
@@ -221,7 +218,7 @@ void Dexlize::Network::transfer(const account_name& from, const account_name& to
             a.id = sell_id;
             a.name = from;
             a.quantity = quantity;
-            a.amount = extended_asset(asset(amount, symbol_token), contract);
+            a.amount = extended_asset(asset(amount, symbol), contract);
         });
 
         acc_ptr = _accounts.find(from);
@@ -235,7 +232,7 @@ void Dexlize::Network::transfer(const account_name& from, const account_name& to
         _buys.emplace(from, [&](auto& a) {
             a.id = buy_id;
             a.name = from;
-            a.quantity = extended_asset(asset(amount, symbol_token), contract);
+            a.quantity = extended_asset(asset(amount, symbol), contract);
             a.amount = quantity;
         });
 

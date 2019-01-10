@@ -182,8 +182,10 @@ void Dexlize::Network::apply(const account_name& code, const action_name& action
 
 /**
  * function: user can sell and buy token in the network of dexlize
- * paraneter: memo - json format e.g. {"type": "sell", "amount": "10000.0000", "symbol": "EOS", "contract": "eosio.code"},
- *                                    {"type": "buy", "amount": "10000.0000", "symbol": "ELE", "contract": "elementscoin"}
+ * paraneter: memo - json format e.g. {"type": "sell_order", "amount": "10000.0000", "symbol": "EOS", "contract": "eosio.code"},
+ *                                    {"type": "buy_order", "amount": "10000.0000", "symbol": "ELE", "contract": "elementscoin"}
+ *                                    {"type": "sell", "amount": "10000.0000 ELE", "id": "10001"} 
+*                                     {"type": "buy", "amount": "10000.0000 ELE", "id": "10001"}
  **/
 void Dexlize::Network::transfer(const account_name& from, const account_name& to, const extended_asset& quantity, const string& memo) {
     require_auth(from);

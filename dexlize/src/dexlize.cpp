@@ -111,9 +111,9 @@ bool Dexlize::Network::_parseMemo(const map<string, string>& memoMap, string& ty
 void Dexlize::Network::_buy(uint64_t id, const account_name& from, const asset& quantity) {
     auto sell_ptr = _sells.find(id);
     eosio_assert(sell_ptr != _sells.end(), "the buy order is not exist in the sells table");
-    eosio_assert(sell_ptr->amount >= quantity, "the quantity brought must be less than amoount of order");
-    uint64_t buy_amount(static_cast<double>(sell_ptr->amount.amount) / static_cast<double>(quanity.amount) * sell_ptr->quantity.amount);
-    if (sell_ptr->amount == quanity) {
+    eosio_assert(sell_ptr->exchange >= quantity, "the quantity brought must be less than amoount of order");
+    uint64_t buy_amount(static_cast<double>(sell_ptr->exchange.amount) / static_cast<double>(quanity.amount) * sell_ptr->exchanged.amount);
+    if (sell_ptr->exchange == quanity) {
         _sells.erase(sell_ptr);
         auto acc_ptr = _accounts.find(sell_ptr->name);
         _accounts.modify(acc_ptr, [&](auto& a) {
@@ -123,15 +123,15 @@ void Dexlize::Network::_buy(uint64_t id, const account_name& from, const asset& 
         });
     } else {
         _sells.modify(sell_ptr, [&](auto& a) {
-            a.amount -= quantity;
-            a.quantity.amount -= buy_amount;
+            a.exchange -= quantity;
+            a.exchanged.amount -= buy_amount;
         });
     }
 
     action(permission_level{_self, N(active)},
-           sell->quantity.contract,
+           sell->exchanged.contract,
            N(transfer),
-           make_tuple(_self, from, asset(buy_amount, sell->quantity.symbol), string("buy token, exchange: dexlize network"))).send();
+           make_tuple(_self, from, asset(buy_amount, sell->exchanged.symbol), string("buy token, exchange: dexlize network"))).send();
 }
 
 /**
@@ -277,8 +277,9 @@ void Dexlize::Network::transfer(const account_name& from, const account_name& to
         _sells.emplace(from, [&](auto& a) {
             a.id = sell_id;
             a.name = from;
-            a.quantity = quantity;
-            a.amount = extended_asset(asset(amount, symbol), contract);
+            a.exchanged = quantity;
+            a.exchange = extended_asset(asset(amount, symbol), contract);
+            a.mount = amount;
         });
 
         acc_ptr = _accounts.find(from);
@@ -292,8 +293,9 @@ void Dexlize::Network::transfer(const account_name& from, const account_name& to
         _buys.emplace(from, [&](auto& a) {
             a.id = buy_id;
             a.name = from;
-            a.quantity = extended_asset(asset(amount, symbol), contract);
-            a.amount = quantity;
+            a.exchanged = extended_asset(asset(amount, symbol), contract);
+            a.exchange = quantity;
+            a.amount = amount; 
         });
 
         acc_ptr = _accounts.find(from);

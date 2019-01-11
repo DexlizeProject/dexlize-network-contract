@@ -34,8 +34,9 @@ namespace Dexlize {
     struct sell_bill {
         uint64_t id;
         account_name name;
-        extended_asset quantity;
-        extended_asset amount;
+        extended_asset exchanged;
+        extended_asset exchange;
+        uint64_t amount;
 
         uint64_t primary_key() const {return id;}
     };
@@ -44,8 +45,9 @@ namespace Dexlize {
     struct buy_bill {
         uint64_t id;
         account_name name;
-        extended_asset quantity;
-        extended_asset amount;
+        extended_asset exchanged;
+        extended_asset exchange;
+        uint64_t amount;
 
         uint64_t primary_key() const {return id;}
     };

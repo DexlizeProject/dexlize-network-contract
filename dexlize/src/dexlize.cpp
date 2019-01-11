@@ -108,10 +108,11 @@ bool Dexlize::Network::_parseMemo(const map<string, string>& memoMap, string& ty
     return true;
 }
 
-void Dexlize::Network::_buy(uint64_t id, const account_name& from, const asset& quantity) {
+void Dexlize::Network::_exchange(uint64_t id, const account_name& from, const asset& quantity) {
     auto sell_ptr = _sells.find(id);
-    eosio_assert(sell_ptr != _sells.end(), "the buy order is not exist in the sells table");
-    eosio_assert(sell_ptr->exchange >= quantity, "the quantity brought must be less than amoount of order");
+    eosio_assert(sell_ptr != _sells.end(), "the sell order is not exist in the sells table");
+    eosio_assert(sell_ptr->exchange >= quantity, "the quantity brought must be less than amount of order");
+    eosio_assert(quantity.symbol == sell_ptr->exchange.symbol, "must pay with exchange token when buying token");
     uint64_t buy_amount(static_cast<double>(sell_ptr->exchange.amount) / static_cast<double>(quanity.amount) * sell_ptr->exchanged.amount);
     if (sell_ptr->exchange == quanity) {
         _sells.erase(sell_ptr);
@@ -129,9 +130,17 @@ void Dexlize::Network::_buy(uint64_t id, const account_name& from, const asset& 
     }
 
     action(permission_level{_self, N(active)},
-           sell->exchanged.contract,
+           _sell->exchanged.contract,
            N(transfer),
            make_tuple(_self, from, asset(buy_amount, sell->exchanged.symbol), string("buy token, exchange: dexlize network"))).send();
+}
+
+void Dexlize::Network::_sell(uint64_t id, const account_name& from, const asset& quantity) {
+    auto buy_ptr = _buys.find(id);
+    eosio_assert(buy_ptr != _buys.end(), "the buy order is not exist in the buys table");
+    eosio_assert(buy_ptr->exchange >= quantity, "the quantity selled must be less than amount of order");
+    eosio_assert(quantity.symbol == sell_ptr->exchange.symbol, "must pay with exchange token when selling token");
+
 }
 
 /**
@@ -224,8 +233,8 @@ void Dexlize::Network::apply(const account_name& code, const action_name& action
  *                                    {"type": "4", "id": "10001"}
  * description: type: 1, the action is the order bought of user
  *              type: 2, the action is the order selled od user
- *              type: 3, the action is that user want to buy token to get eos
- *              type: 4, the action is that user want to sell token by eos
+ *              type: 3, the action is that user want to buy token by costing eos in the order selled
+ *              type: 4, the action is that user want to get eos by costing token in the order bought
  **/
 void Dexlize::Network::transfer(const account_name& from, const account_name& to, const extended_asset& quantity, const string& memo) {
     require_auth(from);

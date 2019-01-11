@@ -222,10 +222,10 @@ void Dexlize::Network::apply(const account_name& code, const action_name& action
  *                                    {"type": "2", "amount": "10000.0000", "symbol": "ELE", "contract": "elementscoin"}
  *                                    {"type": "3", "id": "10001"} 
  *                                    {"type": "4", "id": "10001"}
- * description: type: 1, the action is the order sell of user
- *              type: 2, the action is the order buy od user
- *              type: 3, the action is that user want to sell token to get eos
- *              type: 4, the action is that user want to buy token by eos
+ * description: type: 1, the action is the order bought of user
+ *              type: 2, the action is the order selled od user
+ *              type: 3, the action is that user want to buy token to get eos
+ *              type: 4, the action is that user want to sell token by eos
  **/
 void Dexlize::Network::transfer(const account_name& from, const account_name& to, const extended_asset& quantity, const string& memo) {
     require_auth(from);

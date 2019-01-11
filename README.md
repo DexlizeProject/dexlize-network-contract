@@ -15,7 +15,7 @@ data: {
     "from": "yourself",
     "to": "dexlizenetwk",
     "quantity": "100.0000 EOS",
-    "memo": {"type": "buy", "amount": "10000.0000", "symbol": "ELE", "contract": "elementscoin"}
+    "memo": {"type": "0", "amount": "10000.0000", "symbol": "ELE", "contract": "elementscoin"}
 }
 ```
 
@@ -24,13 +24,13 @@ you can add the order selled by transfering the token that want to be selled, me
 you want to be cost that would be set in the memo.
 
 ```js
-contract: eosio.token
+contract: elementscoin
 action: transfer
 data: {
     "from": "yourself",
     "to": "dexlizenetwk"
     "quantity": "10000.0000 ELE",
-    "memo": {"type": "sell", "amount": "10000.0000", "symbol": "EOS", "contract": "eosio.token"}
+    "memo": {"type": "1", "amount": "10000.0000", "symbol": "EOS", "contract": "eosio.token"}
 }
 ```
 
@@ -57,5 +57,33 @@ data: {
     "from": "yourself",
     "bill_id": "100001",
     "memo": "buy"
+}
+```
+
+### Buy token Example
+You can buy token that you want to buy meanwhile you set the type and the id of order selled.
+
+```js
+contract: eosio.token
+action: transfer
+data: {
+    "from": "yourself",
+    "to": "dexlizenetwk"
+    "quantity": "10000.0000 EOS",
+    "memo": {"type": "3", "id": "10001"}
+}
+```
+
+### Sell token Example
+You can sell token that you want to sell meanwhile you set the type and the id of order bought.
+
+```js
+contract: elementscoin
+action: transfer
+data: {
+    "from": "yourself",
+    "to": "dexlizenetwk"
+    "quantity": "10000.0000 ELE",
+    "memo": {"type": "4", "id": "10001"}
 }
 ```

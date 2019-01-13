@@ -57,7 +57,8 @@ namespace Dexlize {
         void _sendAction(account_name contract, account_name to, asset quantity, string actionStr, string memo);
         bool _checkSymbol(account_name contractAccount, symbol_name symbolName);
         bool _parseMemo(const map<string, string>& memo, string& type, symbol_name& symbol, double& amount, account_name& contract);
-
+        void _sell(uint64_t id, const account_name& from, const asset& quantity);
+        void _buy(uint64_t id, const account_name& from, const asset& quantity);
         uint64_t _next_sell_id() {
             st_global global = _global.get_or_default(
                 st_global{.sell_id = 0, .buy_id = 0});

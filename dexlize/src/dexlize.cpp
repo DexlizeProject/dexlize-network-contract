@@ -108,7 +108,7 @@ bool Dexlize::Network::_parseMemo(const map<string, string>& memoMap, string& ty
     return true;
 }
 
-void Dexlize::Network::_exchange(uint64_t id, const account_name& from, const asset& quantity) {
+void Dexlize::Network::_sell(uint64_t id, const account_name& from, const asset& quantity) {
     auto sell_ptr = _sells.find(id);
     eosio_assert(sell_ptr != _sells.end(), "the sell order is not exist in the sells table");
     eosio_assert(sell_ptr->exchange >= quantity, "the quantity brought must be less than amount of order");
@@ -130,7 +130,7 @@ void Dexlize::Network::_exchange(uint64_t id, const account_name& from, const as
     }
 
     action(permission_level{_self, N(active)},
-           _sell->exchanged.contract,
+           sell_ptr->exchanged.contract,
            N(transfer),
            make_tuple(_self, from, asset(buy_amount, sell->exchanged.symbol), string("buy token, exchange: dexlize network"))).send();
 }
@@ -139,8 +139,27 @@ void Dexlize::Network::_sell(uint64_t id, const account_name& from, const asset&
     auto buy_ptr = _buys.find(id);
     eosio_assert(buy_ptr != _buys.end(), "the buy order is not exist in the buys table");
     eosio_assert(buy_ptr->exchange >= quantity, "the quantity selled must be less than amount of order");
-    eosio_assert(quantity.symbol == sell_ptr->exchange.symbol, "must pay with exchange token when selling token");
+    eosio_assert(quantity.symbol == buy_ptr->exchange.symbol, "must pay with exchange token when selling token");
+    uint64_t sell_amount(static_cast<double>(buy_ptr->exchange.amount) / static_cast<double>(quanity.amount) * buy_ptr->exchanged.amount);
+    if (buy_ptr->exchange == quanity) {
+        _sells.erase(buy_ptr);
+        auto acc_ptr = _accounts.find(buy_ptr->name);
+        _accounts.modify(acc_ptr, [&](auto& a) {
+            auto acc_buy_ptr = find(a.buys.end(), a.buys.end(), id);
+            eosio_assert(acc_buy_ptr != a.buys.end(), "sell id is not exist in the account table");
+            a.buys.erase(acc_buy_ptr);
+        });
+    } else {
+        _sells.modify(sell_ptr, [&](auto& a) {
+            a.exchange -= quantity;
+            a.exchanged.amount -= sell_amount;
+        });
+    }
 
+    action(permission_level{_self, N(active)},
+           buy_ptr->exchanged.contract,
+           N(transfer),
+           make_tuple(_self, from, asset(buy_amount, sell->exchanged.symbol), string("buy token, exchange: dexlize network"))).send();
 }
 
 /**

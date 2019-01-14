@@ -30,19 +30,8 @@ namespace Dexlize {
         uint64_t primary_key() const {return name;}
     };
 
-    // @abi table sells i64
-    struct sell_bill {
-        uint64_t id;
-        account_name name;
-        extended_asset exchanged;
-        extended_asset exchange;
-        uint64_t amount;
-
-        uint64_t primary_key() const {return id;}
-    };
-
-    // @abi table buys i64
-    struct buy_bill {
+    // @abi table orders i64
+    struct order {
         uint64_t id;
         account_name name;
         extended_asset exchanged;
@@ -68,7 +57,7 @@ namespace Dexlize {
     };
 
     typedef multi_index<N(accounts), account> accounts;
-    typedef multi_index<N(sells), sell_bill> sells;
-    typedef multi_index<N(buys), buy_bill> buys;
+    typedef multi_index<N(sells), order> sells;
+    typedef multi_index<N(buys), order> buys;
     typedef singleton<N(global), st_global> global;
 }

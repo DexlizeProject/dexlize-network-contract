@@ -36,7 +36,8 @@ namespace Dexlize {
         account_name name;
         extended_asset exchanged;
         extended_asset exchange;
-        uint64_t amount;
+        int64_t amount;
+        bool actived;
 
         uint64_t primary_key() const {return id;}
     };
@@ -56,8 +57,8 @@ namespace Dexlize {
         uint64_t primary_key() const {return sell_id;}
     };
 
-    typedef multi_index<N(accounts), account> accounts;
-    typedef multi_index<N(sells), order> sells;
-    typedef multi_index<N(buys), order> buys;
+    typedef multi_index<N(accounts), account> tb_accounts;
+    typedef multi_index<N(sells), order> tb_sells;
+    typedef multi_index<N(buys), order> tb_buys;
     typedef singleton<N(global), st_global> global;
 }

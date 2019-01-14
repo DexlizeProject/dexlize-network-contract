@@ -40,6 +40,8 @@ namespace Dexlize {
         void transfer(const account_name& from, const account_name& to, const extended_asset& quantity, const string& memo);
 
         // @abi action
+        void create(const account_name& from, const account_name& token, const string& memo);
+        // @abi action
         void cancel(const account_name& from, const uint64_t& bill_id, const string& memo);
         // @abi action
         void version();
@@ -57,10 +59,10 @@ namespace Dexlize {
         void _sendAction(account_name contract, account_name to, asset quantity, string actionStr, string memo);
         bool _checkSymbol(account_name contractAccount, symbol_name symbolName);
         bool _parseMemo(const map<string, string>& memo, symbol_name& symbol, double& amount, account_name& contract);
-        void _sell(uint64_t id, const account_name& from, const asset& quantity);
-        void _buy(uint64_t id, const account_name& from, const asset& quantity);
-        void _sellOrder(const account_name& from, const asset& quantity, const account_name& contract, const symbol_name& symbol, int64_t amount);
-        void _buyOrder(const account_name& from, const asset& quantity, const account_name& contract, const symbol_name& symbol, int64_t amount);
+        void _sell(uint64_t id, const account_name& from, const extended_asset& quantity);
+        void _buy(uint64_t id, const account_name& from, const extended_asset& quantity);
+        void _sellOrder(const account_name& from, const extended_asset& quantity, const account_name& contract, const symbol_name& symbol, int64_t amount);
+        void _buyOrder(const account_name& from, const extended_asset& quantity, const account_name& contract, const symbol_name& symbol, int64_t amount);
 
         uint64_t _next_sell_id() {
             st_global global = _global.get_or_default(

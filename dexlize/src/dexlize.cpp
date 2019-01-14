@@ -103,7 +103,7 @@ bool Dexlize::Network::_parseMemo(const map<string, string>& memoMap, symbol_nam
     return true;
 }
 
-void Dexlize::Network::_sell(uint64_t id, const account_name& from, const asset& quantity) {
+void Dexlize::Network::_sell(uint64_t id, const account_name& from, const extended_asset& quantity) {
     auto sell_ptr = _sells.find(id);
     eosio_assert(sell_ptr != _sells.end(), "the sell order is not exist in the sells table");
     eosio_assert(sell_ptr->exchange >= quantity, "the quantity brought must be less than amount of order");
@@ -130,7 +130,7 @@ void Dexlize::Network::_sell(uint64_t id, const account_name& from, const asset&
            make_tuple(_self, from, asset(buy_amount, sell->exchanged.symbol), string("buy token, exchange: dexlize network"))).send();
 }
 
-void Dexlize::Network::_buy(uint64_t id, const account_name& from, const asset& quantity) {
+void Dexlize::Network::_buy(uint64_t id, const account_name& from, const extended_asset& quantity) {
     auto buy_ptr = _buys.find(id);
     eosio_assert(buy_ptr != _buys.end(), "the buy order is not exist in the buys table");
     eosio_assert(buy_ptr->exchange >= quantity, "the quantity selled must be less than amount of order");
@@ -157,8 +157,10 @@ void Dexlize::Network::_buy(uint64_t id, const account_name& from, const asset& 
            make_tuple(_self, from, asset(buy_amount, sell->exchanged.symbol), string("buy token, exchange: dexlize network"))).send();
 }
 
-void Dexlize::Network::_sellOrder(const account_name& from, const asset& quantity, const account_name& contract, symbol_name symbol, int64_t amount) {
+void Dexlize::Network::_sellOrder(const account_name& from, const extended_asset& quantity, const account_name& contract, symbol_name symbol, int64_t amount) {
     uint64_t sell_id = _next_sell_id();
+    tb_sells sells(_self, quantity.contract);
+    auto sell_ptr = sells.find(sell_id);
     _sells.emplace(from, [&](auto& a) {
         a.id = sell_id;
         a.name = from;
@@ -173,7 +175,7 @@ void Dexlize::Network::_sellOrder(const account_name& from, const asset& quantit
     });
 }
 
-void Dexlize::Network::_buyOrder(const account_name& from, const asset& quantity, const account_name& contract, const symbol_name& symbol, int64_t amount) {
+void Dexlize::Network::_buyOrder(const account_name& from, const extended_asset& quantity, const account_name& contract, const symbol_name& symbol, int64_t amount) {
     eosio_assert(quantity.contract == N(eosio.token), "must pay with EOS token by eosio.token");
     eosio_assert(quantity.symbol == EOS_SYMBOL, "must pay with EOS token");
     uint64_t buy_id = _next_buy_id();
@@ -273,6 +275,66 @@ void Dexlize::Network::apply(const account_name& code, const action_name& action
     };
 }
 
+
+/**
+ * function: user can create order of bought/selled by this function
+ * parameter: token - should set the contract address of order e.g "elementscoin"
+ *            memo - e.g "buy" or "sell"
+ **/
+void Dexlize::Network::create(const account_name& from, const account_name& token, const string& memo) {
+    require_auth(from);
+
+    eosio_assert(memo == "buy" || memo == "sell", "must set the type of order in the memo");
+
+    // create current account
+    tb_accounts accounts(_self, from);
+    auto acc_ptr = accounts.find(token);
+    if (acc_ptr == accounts.end()) {
+        accounts.emplace(from, [&](auto& a) {
+            a.name = token;
+        });
+    }
+
+    // create order of selled/bought
+    if (memo == "buy") {
+        uint64_t buy_id = _next_buy_id();
+        tb_buys buys(_self, token);
+        auto buy_ptr = buys.find(buy_id);
+        if (buy_ptr == buys.end()) {
+            buys.emplace((from, [&](auto& a) {
+                a.id = buy_id;
+                a.name = from;
+                a.exchanged = extended_asset(sset(0, EOS_SYMBOL), N(eosio.token));
+                a.exchange = extended_asset(asset(0, EOS_SYMBOL), N(eosio.token));
+                a.mount = 0;
+                a.actived = false;
+            });
+        }
+
+        accounts.modify(accounts.find(token), [&](auto& a) {
+            a.buys.emplace_back(buy_id);
+        });
+    } else {
+        uint64_t sell_id = _next_sell_id();
+        tb_sells sells(_self, token);
+        auto sell_ptr = sells.find(sell_id);
+        if (sell_ptr == sells.end()) {
+            sells.emplace((from, [&](auto& a) {
+                a.id = sell_id;
+                a.name = from;
+                a.exchanged = extended_asset(sset(0, EOS_SYMBOL), N(eosio.token));
+                a.exchange = extended_asset(asset(0, EOS_SYMBOL), N(eosio.token));
+                a.mount = 0;
+                a.actived = false;
+            });
+        }
+
+        accounts.modify(accounts.find(token), [&](auto& a) {
+            a.buys.emplace_back(sell_id);
+        });
+    }
+}
+
 /**
  * function: user can sell and buy token in the network of dexlize
  * paraneter: memo - json format e.g. {"type": "1", "amount": "10000.0000", "symbol": "EOS", "contract": "eosio.code"},
@@ -299,14 +361,6 @@ void Dexlize::Network::transfer(const account_name& from, const account_name& to
     eosio_assert(!utils.parseJson(memo, memoMap), "invalid memo format, the memo must be the format of json");
     auto type_ptr = memoMap.find("type");
     eosio_assert(type_ptr != memoMap.end(), "must set type of bill in the memo");
-    // create current account
-    auto acc_ptr = _accounts.find(from);
-    if (acc_ptr == _accounts.end()) {
-        _accounts.emplace(from, [&](auto& a) {
-            a.name = from;
-        });
-    }
-    eosio_assert(acc_ptr != _accounts.end(), "the account is not exist in the accounts");
 
     uint64_t type = stoi(type_ptr->second);
     if (type == 1 || type == 2) {

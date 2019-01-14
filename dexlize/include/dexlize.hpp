@@ -59,6 +59,7 @@ namespace Dexlize {
         void _sendAction(account_name contract, account_name to, asset quantity, string actionStr, string memo);
         bool _checkSymbol(account_name contractAccount, symbol_name symbolName);
         bool _parseMemo(const map<string, string>& memo, symbol_name& symbol, double& amount, account_name& contract);
+        bool _parseMemo(const map<string, string>& memoMap, uint64_t& id, account_name& contract);
         void _sell(uint64_t id, const account_name& from, const extended_asset& quantity);
         void _buy(uint64_t id, const account_name& from, const extended_asset& quantity);
         void _sellOrder(const account_name& from, const extended_asset& quantity, const account_name& contract, const symbol_name& symbol, int64_t amount);

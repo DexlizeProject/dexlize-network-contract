@@ -74,12 +74,16 @@ bool Dexlize::Network::_checkSymbol(account_name contractAccount, symbol_name sy
     return reVal;
 }
 
-bool Dexlize::Network::_parseMemo(const map<string, string>& memoMap, uint64_t& id) {
+bool Dexlize::Network::_parseMemo(const map<string, string>& memoMap, uint64_t& id, account_name& contract) {
     bool reVal = false;
 
     auto id_ptr = memoMap.find("id");
     eosio_assert(type_ptr != memoMap.end(), "must set order id in the memo when buying or selling");
     id = stoi(id_ptr->second);
+
+    auto contract_ptr = memoMap.find("contract");
+    eosio_assert(contract_ptr != memoMap.end(), "must set the contract in the memo");
+    contract = string_to_name(contract_ptr->second.c_str());
 
     return true;
 }
@@ -157,7 +161,8 @@ void Dexlize::Network::_buy(uint64_t id, const account_name& from, const extende
            make_tuple(_self, from, asset(buy_amount, sell->exchanged.symbol), string("buy token, exchange: dexlize network"))).send();
 }
 
-void Dexlize::Network::_sellOrder(const account_name& from, const extended_asset& quantity, const account_name& contract, symbol_name symbol, int64_t amount) {
+void Dexlize::Network::_activeSellOrder(const account_name& from, const extended_asset& quantity) {
+    tb_sells sells(_self, quantity.contract);
     uint64_t sell_id = _next_sell_id();
     tb_sells sells(_self, quantity.contract);
     auto sell_ptr = sells.find(sell_id);
@@ -279,12 +284,13 @@ void Dexlize::Network::apply(const account_name& code, const action_name& action
 /**
  * function: user can create order of bought/selled by this function
  * parameter: token - should set the contract address of order e.g "elementscoin"
- *            memo - e.g "buy" or "sell"
+ *            memo - json format e.g. {"type": "1", "amount": "10000.0000", "symbol": "EOS", "contract": "eosio.code"}
+ *                                    {"type": "2", "amount": "10000.0000", "symbol": "ELE", "contract": "elementscoin"}
  **/
 void Dexlize::Network::create(const account_name& from, const account_name& token, const string& memo) {
     require_auth(from);
 
-    eosio_assert(memo == "buy" || memo == "sell", "must set the type of order in the memo");
+    eosio_assert(memo == "1" || memo == "2", "must set the type of order in the memo");
 
     // create current account
     tb_accounts accounts(_self, from);
@@ -295,8 +301,19 @@ void Dexlize::Network::create(const account_name& from, const account_name& toke
         });
     }
 
+    // parse the memo
+    Utils utils;
+    map<string, string> memoMap;
+    eosio_assert(!utils.parseJson(memo, memoMap), "invalid memo format, the memo must be the format of json");
+    auto type_ptr = memoMap.find("type");
+    eosio_assert(type_ptr != memoMap.end(), "must set type of bill in the memo");
+    symbol_name symbol;
+    int64_t amount;
+    account_name contract;
+    _parseMemo(memoMap, symbol, amount, contract);
+
     // create order of selled/bought
-    if (memo == "buy") {
+    if (type_ptr->second == "1") {
         uint64_t buy_id = _next_buy_id();
         tb_buys buys(_self, token);
         auto buy_ptr = buys.find(buy_id);
@@ -305,8 +322,8 @@ void Dexlize::Network::create(const account_name& from, const account_name& toke
                 a.id = buy_id;
                 a.name = from;
                 a.exchanged = extended_asset(sset(0, EOS_SYMBOL), N(eosio.token));
-                a.exchange = extended_asset(asset(0, EOS_SYMBOL), N(eosio.token));
-                a.mount = 0;
+                a.exchange = extended_asset(asset(amount, symbol), contract);;
+                a.mount = amount;
                 a.actived = false;
             });
         }
@@ -323,8 +340,8 @@ void Dexlize::Network::create(const account_name& from, const account_name& toke
                 a.id = sell_id;
                 a.name = from;
                 a.exchanged = extended_asset(sset(0, EOS_SYMBOL), N(eosio.token));
-                a.exchange = extended_asset(asset(0, EOS_SYMBOL), N(eosio.token));
-                a.mount = 0;
+                a.exchange = extended_asset(asset(amount, symbol), contract);
+                a.mount = amount;
                 a.actived = false;
             });
         }
@@ -337,10 +354,10 @@ void Dexlize::Network::create(const account_name& from, const account_name& toke
 
 /**
  * function: user can sell and buy token in the network of dexlize
- * paraneter: memo - json format e.g. {"type": "1", "amount": "10000.0000", "symbol": "EOS", "contract": "eosio.code"},
- *                                    {"type": "2", "amount": "10000.0000", "symbol": "ELE", "contract": "elementscoin"}
- *                                    {"type": "3", "id": "10001"} 
- *                                    {"type": "4", "id": "10001"}
+ * paraneter: memo - json format e.g. {"type": "1", "id": "10001", "contract": "elementscoin"},
+ *                                    {"type": "2", "id": "10001", "contract": "elementscoin"},
+ *                                    {"type": "3", "id": "10001", "contract": "elementscoin"}, 
+ *                                    {"type": "4", "id": "10001", "contract": "elementscoin"}
  * description: type: 1, the action is the order bought of user
  *              type: 2, the action is the order selled od user
  *              type: 3, the action is that user want to buy token by costing eos in the order selled
@@ -361,8 +378,16 @@ void Dexlize::Network::transfer(const account_name& from, const account_name& to
     eosio_assert(!utils.parseJson(memo, memoMap), "invalid memo format, the memo must be the format of json");
     auto type_ptr = memoMap.find("type");
     eosio_assert(type_ptr != memoMap.end(), "must set type of bill in the memo");
-
     uint64_t type = stoi(type_ptr->second);
+    eosio_assert(type > 0 && type < 5, "the format of type is not correct in the memo");
+    uint64_t id;
+    account_name contract;
+    _parseMemo(memoMap, id, contract);
+
+    if (type == 1) {
+
+    }
+
     if (type == 1 || type == 2) {
         symbol_name symbol;
         int64_t amount;

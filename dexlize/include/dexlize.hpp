@@ -30,10 +30,7 @@ namespace Dexlize {
     class Network : public contract {
         public:
         explicit Network(account_name self) : 
-            contract(self), 
-            _accounts(_self, _self), 
-            _sells(_self, _self),
-            _buys(_self, _self),
+            contract(self),
             _global(_self, _self) {};
 
         void apply(const account_name& code, const action_name& action);
@@ -58,10 +55,11 @@ namespace Dexlize {
 
         void _sendAction(account_name contract, account_name to, asset quantity, string actionStr, string memo);
         bool _checkSymbol(account_name contractAccount, symbol_name symbolName);
-        bool _parseMemo(const map<string, string>& memo, symbol_name& symbol, double& amount, account_name& contract);
+        asset _toAsset(const string& amount);
+        bool _parseMemo(const map<string, string>& memo, asset& exchanged, asset& exchange, account_name& contract);
         bool _parseMemo(const map<string, string>& memoMap, uint64_t& id, account_name& contract);
-        void _sell(uint64_t id, const account_name& from, const extended_asset& quantity);
-        void _buy(uint64_t id, const account_name& from, const extended_asset& quantity);
+        void _sell(const account_name& from, const extended_asset& quantity, const account_name& contract, uint64_t id);
+        void _buy(const account_name& from, const extended_asset& quantity, const account_name& contract, uint64_t id);
         void _sellOrder(const account_name& from, const extended_asset& quantity, const account_name& contract, const symbol_name& symbol, int64_t amount);
         void _buyOrder(const account_name& from, const extended_asset& quantity, const account_name& contract, const symbol_name& symbol, int64_t amount);
 
@@ -82,9 +80,6 @@ namespace Dexlize {
         }
 
         private:
-        accounts _accounts;
-        sells _sells;
-        buys _buys;
         global _global;
     };
 }; // namespace dexlize

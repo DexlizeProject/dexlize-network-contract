@@ -79,14 +79,14 @@ eosio::asset Dexlize::Network::_toAsset(const string& amount) {
     eosio_assert(pos != string::npos, "the format of aseet is not correct");
     int64_t quantity = static_cast<int64_t>(stod(amount.substr(0, pos)) * 10000);
     eosio_assert(quantity > 1, "the order amount must greater than zero");
-    return asset(quantity, string_to_symbol(4, amount.substr(pos).c_str()));
+    return asset(quantity, string_to_symbol(4, amount.substr(pos + 1).c_str()));
 }
 
 bool Dexlize::Network::_parseMemo(const map<string, string>& memoMap, uint64_t& id, account_name& contract) {
     bool reVal = false;
 
     auto id_ptr = memoMap.find("id");
-    eosio_assert(type_ptr != memoMap.end(), "must set order id in the memo when buying or selling");
+    eosio_assert(id_ptr != memoMap.end(), "must set order id in the memo when buying or selling");
     id = stoi(id_ptr->second);
 
     auto contract_ptr = memoMap.find("contract");
@@ -119,19 +119,19 @@ void Dexlize::Network::_sell(const account_name& from, const extended_asset& qua
     auto buy_ptr = buys.find(id);
     eosio_assert(buy_ptr != buys.end(), "the buy order is not exist");
     eosio_assert((buy_ptr->exchanged - quantity).amount >= 0, "the quantity brought must be less than amount of order");
-    int64_t sell_amount(static_cast<double>(quanity.amount) / static_cast<double>(buy_ptr->exchanged.amount) * buy_ptr->exchange.amount);
+    int64_t sell_amount(static_cast<double>(quantity.amount) / static_cast<double>(buy_ptr->exchanged.amount) * buy_ptr->exchange.amount);
 
-    if (buy_ptr->exchanged.amount == quanity.amount) {
+    if (buy_ptr->exchanged.amount == quantity.amount) {
         buys.erase(buy_ptr);
-        tb_accounts accounts(_self, contract);
+        tb_accounts accounts(_self, from);
         auto acc_ptr = accounts.find(buy_ptr->name);
-        accounts.modify(acc_ptr, [&](auto& a) {
+        accounts.modify(acc_ptr, 0, [&](auto& a) {
             auto acc_buy_ptr = find(a.buys.end(), a.buys.end(), id);
             eosio_assert(acc_buy_ptr != a.buys.end(), "buy order id is not exist in the account table");
             a.buys.erase(acc_buy_ptr);
         });
     } else {
-        buys.modify(buy_ptr, [&](auto& a) {
+        buys.modify(buy_ptr, 0, [&](auto& a) {
             a.exchanged -= quantity;
             a.exchange.amount -= sell_amount;
         });
@@ -140,7 +140,7 @@ void Dexlize::Network::_sell(const account_name& from, const extended_asset& qua
     action(permission_level{_self, N(active)},
            buy_ptr->exchange.contract,
            N(transfer),
-           make_tuple(_self, from, asset(buy_amount, buy_ptr->exchange.symbol), string("sell token, exchange: dexlize network"))).send();
+           make_tuple(_self, from, asset(sell_amount, buy_ptr->exchange.symbol), string("sell token, exchange: dexlize network"))).send();
 
     action(permission_level{_self, N(active)},
         buy_ptr->exchanged.contract,
@@ -153,18 +153,18 @@ void Dexlize::Network::_buy(const account_name& from, const extended_asset& quan
     auto sell_ptr = sells.find(id);
     eosio_assert(sell_ptr != sells.end(), "the sell order is not exist");
     eosio_assert((sell_ptr->exchange - quantity).amount >= 0, "the quantity selled must be less than amount of order");
-    int64_t sell_amount(static_cast<double>(quanity.amount) / static_cast<double>(sell_ptr->exchange.amount) * buy_ptr->exchanged.amount);
-    if (sell_ptr->exchange.amount == quanity.amount) {
+    int64_t sell_amount(static_cast<double>(quantity.amount) / static_cast<double>(sell_ptr->exchange.amount) * sell_ptr->exchanged.amount);
+    if (sell_ptr->exchange.amount == quantity.amount) {
         sells.erase(sell_ptr);
         tb_accounts accounts(_self, contract);
         auto acc_ptr = accounts.find(sell_ptr->name);
-        _accounts.modify(acc_ptr, [&](auto& a) {
+        accounts.modify(acc_ptr, 0, [&](auto& a) {
             auto acc_sell_ptr = find(a.sells.end(), a.sells.end(), id);
             eosio_assert(acc_sell_ptr != a.sells.end(), "sell order id is not exist in the account table");
             a.sells.erase(acc_sell_ptr);
         });
     } else {
-        sells.modify(sell_ptr, [&](auto& a) {
+        sells.modify(sell_ptr, 0, [&](auto& a) {
             a.exchanged.amount -= sell_amount;
             a.exchange -= quantity;
         });
@@ -178,7 +178,7 @@ void Dexlize::Network::_buy(const account_name& from, const extended_asset& quan
     action(permission_level{_self, N(active)},
         sell_ptr->exchange.contract,
         N(transfer),
-        make_tuple(_self, buy_ptr->name, asset(quantity.amount, buy_ptr->exchange.symbol), string("sell token, exchange: dexlize network"))).send();
+        make_tuple(_self, sell_ptr->name, asset(quantity.amount, sell_ptr->exchange.symbol), string("sell token, exchange: dexlize network"))).send();
 }
 
 void Dexlize::Network::_activeSellOrder(const extended_asset& quantity, const account_name& contract, uint64_t id) {
@@ -186,7 +186,7 @@ void Dexlize::Network::_activeSellOrder(const extended_asset& quantity, const ac
     auto sell_ptr = sells.find(id);
     eosio_assert(sell_ptr != sells.end(), "current sell order is not exist");
     eosio_assert(sell_ptr->exchanged == quantity, "transfer quantity must be equal with exchanged quantity");
-    sells.modify(sell_ptr, [&](auto& a) {
+    sells.modify(sell_ptr, 0, [&](auto& a) {
         a.actived = true;
     });
 }
@@ -198,7 +198,7 @@ void Dexlize::Network::_activeBuyOrder(const extended_asset& quantity, const acc
     auto buy_ptr = buys.find(id);
     eosio_assert(buy_ptr != buys.end(), "current buy order is not exist");
     eosio_assert(buy_ptr->exchange == quantity, "transfer quantity must be equal with exchange quantity");
-    buys.modify(buy_ptr, [&](auto& a) {
+    buys.modify(buy_ptr, 0, [&](auto& a) {
         a.actived = true;
     });
 }
@@ -278,7 +278,7 @@ void Dexlize::Network::apply(const account_name& code, const action_name& action
 
     if (code != _self || action == N(transfer)) return;
     switch (action) {
-        EOSIO_API(Dexlize::Network, (cancel)(version));
+        EOSIO_API(Dexlize::Network, (create)(cancel)(version));
         default:
         eosio_assert(false, "Not contract action cannot be accepted");
         break;
@@ -312,7 +312,7 @@ void Dexlize::Network::create(const account_name& from, const account_name& toke
     eosio_assert(!utils.parseJson(memo, memoMap), "invalid memo format, the memo must be the format of json");
     auto type_ptr = memoMap.find("type");
     eosio_assert(type_ptr != memoMap.end(), "must set type of bill in the memo");
-    asset& exchanged, exchange;
+    asset exchanged, exchange;
     account_name contract;
     _parseMemo(memoMap, exchanged, exchange, contract);
 
@@ -322,7 +322,7 @@ void Dexlize::Network::create(const account_name& from, const account_name& toke
         tb_buys buys(_self, token);
         auto buy_ptr = buys.find(buy_id);
         if (buy_ptr == buys.end()) {
-            buys.emplace((from, [&](auto& a) {
+            buys.emplace(from, [&](auto& a) {
                 a.id = buy_id;
                 a.name = from;
                 a.exchanged = extended_asset(exchanged, contract);
@@ -332,7 +332,7 @@ void Dexlize::Network::create(const account_name& from, const account_name& toke
             });
         }
 
-        accounts.modify(accounts.find(token), [&](auto& a) {
+        accounts.modify(accounts.find(token), 0, [&](auto& a) {
             a.buys.emplace_back(buy_id);
         });
     } else {
@@ -340,17 +340,17 @@ void Dexlize::Network::create(const account_name& from, const account_name& toke
         tb_sells sells(_self, token);
         auto sell_ptr = sells.find(sell_id);
         if (sell_ptr == sells.end()) {
-            sells.emplace((from, [&](auto& a) {
+            sells.emplace(from, [&](auto& a) {
                 a.id = sell_id;
                 a.name = from;
                 a.exchanged = extended_asset(exchanged, contract);
                 a.exchange = extended_asset(exchange, N(eosio.token));
-                a.amount = amount;
+                a.amount = exchange.amount;
                 a.actived = false;
             });
         }
 
-        accounts.modify(accounts.find(token), [&](auto& a) {
+        accounts.modify(accounts.find(token), 0, [&](auto& a) {
             a.buys.emplace_back(sell_id);
         });
     }
@@ -411,37 +411,40 @@ void Dexlize::Network::transfer(const account_name& from, const account_name& to
  * function: user can cancel bill of sell and buy by bill id in the network of dexlize
  * paraneter: memo - json format e.g. {sell/buy}
  **/
-void Dexlize::Network::cancel(const account_name& from, const uint64_t& bill_id, const string& memo) {
+void Dexlize::Network::cancel(const account_name& from, const account_name& contract, uint64_t id, const string& memo) {
     require_auth(from);
 
     // check the memo and bill id
     eosio_assert(memo.size() <= 256, "memo has more than 256 bytes");
-    auto iter = _accounts.find(from);
-    eosio_assert(iter != _accounts.end(), "current account is not exist");
+    tb_accounts accounts(_self, from);
+    auto iter = accounts.find(from);
+    eosio_assert(iter != accounts.end(), "current account is not exist");
     eosio_assert(memo == "sell" || memo == "buy", "the format of memo is not correct");
     if (memo == "sell") {
         // remove the selled bill id of current account
-        auto bill_ptr = find(iter->sells.begin(), iter->sells.end(), bill_id);
+        auto bill_ptr = find(iter->sells.begin(), iter->sells.end(), id);
         eosio_assert(bill_ptr != iter->sells.end(), "the bill id is not exist in the sell bills of current account");
-        _accounts.modify(iter, 0, [&](auto& a) {
+        accounts.modify(iter, 0, [&](auto& a) {
             a.sells.erase(bill_ptr);
         });
 
-        // remove the selled bill
-        auto sell_ptr = _sells.find(bill_id);
-        eosio_assert(sell_ptr != _sells.end(), "the selled bill is not exist");
-        _sells.erase(sell_ptr);
+        // remove the selled 
+        tb_sells sells(_self, contract);
+        auto sell_ptr = sells.find(id);
+        eosio_assert(sell_ptr != sells.end(), "the selled bill is not exist");
+        sells.erase(sell_ptr);
     } else if (memo == "buy") {
         // remove the bought bill id of current account
-        auto bill_ptr = find(iter->buys.begin(), iter->buys.end(), bill_id);
+        auto bill_ptr = find(iter->buys.begin(), iter->buys.end(), id);
         eosio_assert(bill_ptr != iter->buys.end(), "the bill id is not exist in the buy bills of current account");
-        _accounts.modify(iter, 0, [&](auto& a) {
+        accounts.modify(iter, 0, [&](auto& a) {
             a.buys.erase(bill_ptr);
         });
 
         // remove the bought bill
-        auto buy_ptr = _buys.find(bill_id);
-        eosio_assert(buy_ptr != _buys.end(), "the bought bill is not exist");
-        _buys.erase(buy_ptr);
+        tb_buys buys(_self, contract);
+        auto buy_ptr = buys.find(id);
+        eosio_assert(buy_ptr != buys.end(), "the bought bill is not exist");
+        buys.erase(buy_ptr);
     }
 }

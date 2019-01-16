@@ -39,7 +39,7 @@ namespace Dexlize {
         // @abi action
         void create(const account_name& from, const account_name& token, const string& memo);
         // @abi action
-        void cancel(const account_name& from, const uint64_t& bill_id, const string& memo);
+        void cancel(const account_name& from, const account_name& contract, uint64_t id, const string& memo);
         // @abi action
         void version();
         // @abi action
@@ -60,8 +60,8 @@ namespace Dexlize {
         bool _parseMemo(const map<string, string>& memoMap, uint64_t& id, account_name& contract);
         void _sell(const account_name& from, const extended_asset& quantity, const account_name& contract, uint64_t id);
         void _buy(const account_name& from, const extended_asset& quantity, const account_name& contract, uint64_t id);
-        void _sellOrder(const account_name& from, const extended_asset& quantity, const account_name& contract, const symbol_name& symbol, int64_t amount);
-        void _buyOrder(const account_name& from, const extended_asset& quantity, const account_name& contract, const symbol_name& symbol, int64_t amount);
+        void _activeSellOrder(const extended_asset& quantity, const account_name& contract, uint64_t id);
+        void _activeBuyOrder(const extended_asset& quantity, const account_name& contract, uint64_t id);
 
         uint64_t _next_sell_id() {
             st_global global = _global.get_or_default(

@@ -156,8 +156,9 @@ void Dexlize::Network::_buy(const account_name& from, const extended_asset& quan
     int64_t sell_amount(static_cast<double>(quantity.amount) / static_cast<double>(sell_ptr->exchange.amount) * sell_ptr->exchanged.amount);
     if (sell_ptr->exchange.amount == quantity.amount) {
         sells.erase(sell_ptr);
-        tb_accounts accounts(_self, contract);
-        auto acc_ptr = accounts.find(sell_ptr->name);
+        tb_accounts accounts(_self, from);
+        auto acc_ptr = accounts.find(sell_ptr->exchanged.contract);
+        eosio_assert(acc_ptr != accounts.end(), "the contract address is not exist in the account table");
         accounts.modify(acc_ptr, 0, [&](auto& a) {
             auto acc_sell_ptr = find(a.sells.end(), a.sells.end(), id);
             eosio_assert(acc_sell_ptr != a.sells.end(), "sell order id is not exist in the account table");
@@ -292,19 +293,8 @@ void Dexlize::Network::apply(const account_name& code, const action_name& action
  *            memo - json format e.g. {"type": "1", "exed": "10000.0000 ELE", "ex": "10.0000 EOS", "contract": "elementscoin"}
  *                                    {"type": "2", "exed": "10000.0000 ELE", "ex": "10.0000 EOS", "contract": "elementscoin"}
  **/
-void Dexlize::Network::create(const account_name& from, const account_name& token, const string& memo) {
+void Dexlize::Network::create(const account_name& from, const string& memo) {
     require_auth(from);
-
-    eosio_assert(memo == "1" || memo == "2", "must set the type of order in the memo");
-
-    // create current account
-    tb_accounts accounts(_self, from);
-    auto acc_ptr = accounts.find(token);
-    if (acc_ptr == accounts.end()) {
-        accounts.emplace(from, [&](auto& a) {
-            a.name = token;
-        });
-    }
 
     // parse the memo
     Utils utils;
@@ -316,10 +306,19 @@ void Dexlize::Network::create(const account_name& from, const account_name& toke
     account_name contract;
     _parseMemo(memoMap, exchanged, exchange, contract);
 
+    // create current account
+    tb_accounts accounts(_self, from);
+    auto acc_ptr = accounts.find(contract);
+    if (acc_ptr == accounts.end()) {
+        accounts.emplace(from, [&](auto& a) {
+            a.name = contract;
+        });
+    }
+
     // create order of selled/bought
     if (type_ptr->second == "1") {
         uint64_t buy_id = _next_buy_id();
-        tb_buys buys(_self, token);
+        tb_buys buys(_self, contract);
         auto buy_ptr = buys.find(buy_id);
         if (buy_ptr == buys.end()) {
             buys.emplace(from, [&](auto& a) {
@@ -332,12 +331,12 @@ void Dexlize::Network::create(const account_name& from, const account_name& toke
             });
         }
 
-        accounts.modify(accounts.find(token), 0, [&](auto& a) {
+        accounts.modify(accounts.find(contract), 0, [&](auto& a) {
             a.buys.emplace_back(buy_id);
         });
     } else {
         uint64_t sell_id = _next_sell_id();
-        tb_sells sells(_self, token);
+        tb_sells sells(_self, contract);
         auto sell_ptr = sells.find(sell_id);
         if (sell_ptr == sells.end()) {
             sells.emplace(from, [&](auto& a) {
@@ -350,7 +349,7 @@ void Dexlize::Network::create(const account_name& from, const account_name& toke
             });
         }
 
-        accounts.modify(accounts.find(token), 0, [&](auto& a) {
+        accounts.modify(accounts.find(contract), 0, [&](auto& a) {
             a.buys.emplace_back(sell_id);
         });
     }
@@ -409,7 +408,8 @@ void Dexlize::Network::transfer(const account_name& from, const account_name& to
 
 /**
  * function: user can cancel bill of sell and buy by bill id in the network of dexlize
- * paraneter: memo - json format e.g. {sell/buy}
+ * paraneter: memo - json format e.g. {"type": "3"}
+ *                                    {"type": "4"}
  **/
 void Dexlize::Network::cancel(const account_name& from, const account_name& contract, uint64_t id, const string& memo) {
     require_auth(from);
@@ -417,10 +417,15 @@ void Dexlize::Network::cancel(const account_name& from, const account_name& cont
     // check the memo and bill id
     eosio_assert(memo.size() <= 256, "memo has more than 256 bytes");
     tb_accounts accounts(_self, from);
-    auto iter = accounts.find(from);
-    eosio_assert(iter != accounts.end(), "current account is not exist");
-    eosio_assert(memo == "sell" || memo == "buy", "the format of memo is not correct");
-    if (memo == "sell") {
+    auto iter = accounts.find(contract);
+    eosio_assert(iter != accounts.end(), "the contract is not exist in the current account table");
+    // parse the memo of json fomat to get the transfer type
+    Utils utils;
+    map<string, string> memoMap;
+    eosio_assert(!utils.parseJson(memo, memoMap), "invalid memo format, the memo must be the format of json");
+    auto type_ptr = memoMap.find("type");
+    eosio_assert(type_ptr != memoMap.end(), "must set type of bill in the memo");
+    if (type_ptr->second == "4") {
         // remove the selled bill id of current account
         auto bill_ptr = find(iter->sells.begin(), iter->sells.end(), id);
         eosio_assert(bill_ptr != iter->sells.end(), "the bill id is not exist in the sell bills of current account");
@@ -433,7 +438,7 @@ void Dexlize::Network::cancel(const account_name& from, const account_name& cont
         auto sell_ptr = sells.find(id);
         eosio_assert(sell_ptr != sells.end(), "the selled bill is not exist");
         sells.erase(sell_ptr);
-    } else if (memo == "buy") {
+    } else if (type_ptr->second == "3") {
         // remove the bought bill id of current account
         auto bill_ptr = find(iter->buys.begin(), iter->buys.end(), id);
         eosio_assert(bill_ptr != iter->buys.end(), "the bill id is not exist in the buy bills of current account");

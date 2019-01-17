@@ -37,7 +37,7 @@ namespace Dexlize {
         void transfer(const account_name& from, const account_name& to, const extended_asset& quantity, const string& memo);
 
         // @abi action
-        void create(const account_name& from, const account_name& token, const string& memo);
+        void create(const account_name& from, const string& memo);
         // @abi action
         void cancel(const account_name& from, const account_name& contract, uint64_t id, const string& memo);
         // @abi action

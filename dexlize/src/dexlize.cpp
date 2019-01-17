@@ -4,80 +4,80 @@
  */
 #include <algorithm>
 #include "../include/dexlize.hpp"
-#include "../utils/utils.hpp"
+#include "../include/utils.hpp"
 
-std::string Dexlize::Aux::_getMemoValue(const string& key, const map<string, string>& memoMap) const
-{
-    auto iter = memoMap.find(key);
-    eosio_assert(iter != memoMap.end(), "invalid memo format");
-    return iter->second;
-}
+// std::string Dexlize::Aux::_getMemoValue(const string& key, const map<string, string>& memoMap) const
+// {
+//     auto iter = memoMap.find(key);
+//     eosio_assert(iter != memoMap.end(), "invalid memo format");
+//     return iter->second;
+// }
 
-eosio::symbol_name Dexlize::Aux::getSymbolName(const map<string, string>& memoMap) const
-{
-    return SN(_getMemoValue("symbol", memoMap));
-}
+// eosio::symbol_name Dexlize::Aux::getSymbolName(const map<string, string>& memoMap) const
+// {
+//     return SN(_getMemoValue("symbol", memoMap));
+// }
 
-std::string Dexlize::Aux::getOwnerAccount(const map<string, string>& memoMap) const
-{
-    return _getMemoValue("owner", memoMap);
-}
+// std::string Dexlize::Aux::getOwnerAccount(const map<string, string>& memoMap) const
+// {
+//     return _getMemoValue("owner", memoMap);
+// }
 
-account_name Dexlize::Aux::getContractAccount(const map<string, string>& memoMap) const
-{
-    return N(_getMemoValue("contract", memoMap));
-}
+// account_name Dexlize::Aux::getContractAccount(const map<string, string>& memoMap) const
+// {
+//     return N(_getMemoValue("contract", memoMap));
+// }
 
-std::string Dexlize::Aux::getActionMemo(const symbol_name& symbolName, const string& owner) const
-{
-    string memo = "dexlize";
+// std::string Dexlize::Aux::getActionMemo(const symbol_name& symbolName, const string& owner) const
+// {
+//     string memo = "dexlize";
 
-    switch (symbolName)
-    {
-        case SN("PUB"):
-        memo = string("PUB-referrer:").append(GOD_ACCOUNT);
-        break;
-        case SN("TPT"):
-        memo = string("TPT-referrer:").append(GOD_ACCOUNT);
-        break;
-    }
-    memo += "-owner:" + owner;
+//     switch (symbolName)
+//     {
+//         case SN("PUB"):
+//         memo = string("PUB-referrer:").append(GOD_ACCOUNT);
+//         break;
+//         case SN("TPT"):
+//         memo = string("TPT-referrer:").append(GOD_ACCOUNT);
+//         break;
+//     }
+//     memo += "-owner:" + owner;
 
-    return memo;
-}
+//     return memo;
+// }
 
-void Dexlize::Network::_sendAction(account_name contractAccount, account_name to, asset quantity, string actionStr, string memo)
-{
-    action(permission_level{_self, N(active)},
-        contractAccount,
-        N(actionStr),
-        make_tuple(_self, to, quantity, memo)
-    ).send();
-}
+// void Dexlize::Network::_sendAction(account_name contractAccount, account_name to, asset quantity, string actionStr, string memo)
+// {
+//     action(permission_level{_self, N(active)},
+//         contractAccount,
+//         N(actionStr),
+//         make_tuple(_self, to, quantity, memo)
+//     ).send();
+// }
 
-bool Dexlize::Network::_checkSymbol(account_name contractAccount, symbol_name symbolName)
-{
-    bool reVal = false;
+// bool Dexlize::Network::_checkSymbol(account_name contractAccount, symbol_name symbolName)
+// {
+//     bool reVal = false;
 
-    // check if the contact account is supported
-    auto iter = mapContract2Symbol.find(contractAccount);
-    if (iter != mapContract2Symbol.end()) {
-        // check if the symbol is supported
-        for (auto value : iter->second) {
-            if (value == symbolName) {
-                reVal = true;
-                break;
-            }
-        }
-    }
+//     // check if the contact account is supported
+//     auto iter = mapContract2Symbol.find(contractAccount);
+//     if (iter != mapContract2Symbol.end()) {
+//         // check if the symbol is supported
+//         for (auto value : iter->second) {
+//             if (value == symbolName) {
+//                 reVal = true;
+//                 break;
+//             }
+//         }
+//     }
 
-    return reVal;
-}
+//     return reVal;
+// }
 
 eosio::asset Dexlize::Network::_toAsset(const string& amount) {
     auto pos = amount.find(" ");
     eosio_assert(pos != string::npos, "the format of aseet is not correct");
-    int64_t quantity = static_cast<int64_t>(stod(amount.substr(0, pos)) * 10000);
+    int64_t quantity = static_cast<int64_t>(stoi(amount.substr(0, pos)) * 10000);
     eosio_assert(quantity > 1, "the order amount must greater than zero");
     return asset(quantity, string_to_symbol(4, amount.substr(pos + 1).c_str()));
 }
@@ -219,25 +219,25 @@ void Dexlize::Network::version()
  * */
 void Dexlize::Network::buy(account_name from, account_name to, asset eos, string memo)
 {
-    // check if the account name is correct.
-    // from account cannot be owner and to account must be owner.
-    if (from == _self || to != _self) return;
-    eosio_assert(eos.symbol == CORE_SYMBOL, "must pay with CORE token");
+    // // check if the account name is correct.
+    // // from account cannot be owner and to account must be owner.
+    // if (from == _self || to != _self) return;
+    // eosio_assert(eos.symbol == CORE_SYMBOL, "must pay with CORE token");
 
-    // take the symbol name, and the check if the symbol name is in the memo
-    Utils utils;
-    map<string, string> memoMap;
-    eosio_assert(!utils.parseJson(memo, memoMap), "invalid memo format, the memo must be the format of json");
-    account_name contractAccount = aux.getContractAccount(memoMap);
-    symbol_name symbolName = aux.getSymbolName(memoMap);
-    eosio_assert(_checkSymbol(contractAccount, symbolName), "current symbol is not supported");
+    // // take the symbol name, and the check if the symbol name is in the memo
+    // Utils utils;
+    // map<string, string> memoMap;
+    // eosio_assert(!utils.parseJson(memo, memoMap), "invalid memo format, the memo must be the format of json");
+    // account_name contractAccount = aux.getContractAccount(memoMap);
+    // symbol_name symbolName = aux.getSymbolName(memoMap);
+    // eosio_assert(_checkSymbol(contractAccount, symbolName), "current symbol is not supported");
 
-    // get account of contract by the different symbol name in the memo
-    // construct the memo of action by the different symbol name in the memo
-    // and then execute the transfer action of target contract
-    string owner = aux.getOwnerAccount(memoMap);
-    string actionMemo = aux.getActionMemo(symbolName, owner);
-    _sendAction(N(eosio.token), contractAccount, eos, ACTION_TRANSFER_TYPE, actionMemo);
+    // // get account of contract by the different symbol name in the memo
+    // // construct the memo of action by the different symbol name in the memo
+    // // and then execute the transfer action of target contract
+    // string owner = aux.getOwnerAccount(memoMap);
+    // string actionMemo = aux.getActionMemo(symbolName, owner);
+    // _sendAction(N(eosio.token), contractAccount, eos, ACTION_TRANSFER_TYPE, actionMemo);
 }
 
 /**
@@ -248,24 +248,24 @@ void Dexlize::Network::sell(account_name from, account_name to, asset quantity, 
 {
     require_auth(from);
 
-    // check the account of from and to
-    if (from == _self && to != _self) return;
-    eosio_assert(quantity.is_valid(), "invalid quantity");
-    eosio_assert(quantity.amount > 0, "must transfer positive quantity");
-    eosio_assert(memo.size() <= 256, "memo has more than 256 bytes");
+    // // check the account of from and to
+    // if (from == _self && to != _self) return;
+    // eosio_assert(quantity.is_valid(), "invalid quantity");
+    // eosio_assert(quantity.amount > 0, "must transfer positive quantity");
+    // eosio_assert(memo.size() <= 256, "memo has more than 256 bytes");
 
-    // parse the memo of json fomat to get the transfer type
-    Utils utils;
-    map<string, string> memoMap;
-    eosio_assert(!utils.parseJson(memo, memoMap), "invalid memo format, the memo must be the format of json");
-    account_name contractAccount = aux.getContractAccount(memoMap);
-    symbol_name symbolName = aux.getSymbolName(memoMap);
-    eosio_assert(_checkSymbol(contractAccount, symbolName), "current symbol is not supported");
+    // // parse the memo of json fomat to get the transfer type
+    // Utils utils;
+    // map<string, string> memoMap;
+    // eosio_assert(!utils.parseJson(memo, memoMap), "invalid memo format, the memo must be the format of json");
+    // account_name contractAccount = aux.getContractAccount(memoMap);
+    // symbol_name symbolName = aux.getSymbolName(memoMap);
+    // eosio_assert(_checkSymbol(contractAccount, symbolName), "current symbol is not supported");
 
-    // get the contract account from the asset symbol
-    // execute the action of sell by the target contract
-    string owner = aux.getOwnerAccount(memoMap); 
-    _sendAction(contractAccount, contractAccount, quantity, ACTION_SELL_TYPE, "-owner:" + owner);
+    // // get the contract account from the asset symbol
+    // // execute the action of sell by the target contract
+    // string owner = aux.getOwnerAccount(memoMap); 
+    // _sendAction(contractAccount, contractAccount, quantity, ACTION_SELL_TYPE, "-owner:" + owner);
 }
 
 void Dexlize::Network::apply(const account_name& code, const action_name& action) {
@@ -297,9 +297,8 @@ void Dexlize::Network::create(const account_name& from, const string& memo) {
     require_auth(from);
 
     // parse the memo
-    Utils utils;
     map<string, string> memoMap;
-    eosio_assert(!utils.parseJson(memo, memoMap), "invalid memo format, the memo must be the format of json");
+    eosio_assert(parseJson(memo, memoMap), "invalid memo format, the memo must be the format of json");
     auto type_ptr = memoMap.find("type");
     eosio_assert(type_ptr != memoMap.end(), "must set type of bill in the memo");
     asset exchanged, exchange;
@@ -376,9 +375,8 @@ void Dexlize::Network::transfer(const account_name& from, const account_name& to
     eosio_assert(memo.size() <= 256, "memo has more than 256 bytes");
 
     // parse the memo of json fomat to get the transfer type
-    Utils utils;
     map<string, string> memoMap;
-    eosio_assert(!utils.parseJson(memo, memoMap), "invalid memo format, the memo must be the format of json");
+    eosio_assert(parseJson(memo, memoMap), "invalid memo format, the memo must be the format of json");
     auto type_ptr = memoMap.find("type");
     eosio_assert(type_ptr != memoMap.end(), "must set type of bill in the memo");
     uint64_t type = stoi(type_ptr->second);
@@ -420,9 +418,8 @@ void Dexlize::Network::cancel(const account_name& from, const account_name& cont
     auto iter = accounts.find(contract);
     eosio_assert(iter != accounts.end(), "the contract is not exist in the current account table");
     // parse the memo of json fomat to get the transfer type
-    Utils utils;
     map<string, string> memoMap;
-    eosio_assert(!utils.parseJson(memo, memoMap), "invalid memo format, the memo must be the format of json");
+    eosio_assert(parseJson(memo, memoMap), "invalid memo format, the memo must be the format of json");
     auto type_ptr = memoMap.find("type");
     eosio_assert(type_ptr != memoMap.end(), "must set type of bill in the memo");
     if (type_ptr->second == "4") {

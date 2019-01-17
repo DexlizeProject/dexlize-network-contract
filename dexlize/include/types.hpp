@@ -8,6 +8,7 @@
 #include <eosiolib/action.hpp>
 #include <eosiolib/singleton.hpp>
 #include <vector>
+#include <string>
 
 #define SN(X) (string_to_symbol(0, #X) >> 8)
 #define EOS_SYMBOL S(4, EOS)
@@ -30,8 +31,20 @@ namespace Dexlize {
         uint64_t primary_key() const {return name;}
     };
 
-    // @abi table orders i64
-    struct order {
+    // @abi table sells i64
+    struct tb_sell {
+        uint64_t id;
+        account_name name;
+        extended_asset exchanged;
+        extended_asset exchange;
+        int64_t amount;
+        bool actived;
+
+        uint64_t primary_key() const {return id;}
+    };
+
+    // @abi table buys i64
+    struct tb_buy {
         uint64_t id;
         account_name name;
         extended_asset exchanged;
@@ -58,7 +71,7 @@ namespace Dexlize {
     };
 
     typedef multi_index<N(accounts), account> tb_accounts;
-    typedef multi_index<N(sells), order> tb_sells;
-    typedef multi_index<N(buys), order> tb_buys;
+    typedef multi_index<N(sells), tb_sell> tb_sells;
+    typedef multi_index<N(buys), tb_buy> tb_buys;
     typedef singleton<N(global), st_global> global;
 }

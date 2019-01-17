@@ -16,16 +16,16 @@ namespace Dexlize {
     using namespace eosio;
     using namespace std;
 
-    class Aux {
-        public:
-        account_name getContractAccount(const map<string, string>& memoMap) const;
-        symbol_name getSymbolName(const map<string, string>& memoMap) const;
-        string getOwnerAccount(const map<string, string>& memoMap) const;
-        string getActionMemo(const symbol_name& symbolName, const string& owner) const;
+    // class Aux {
+    //     public:
+    //     account_name getContractAccount(const map<string, string>& memoMap) const;
+    //     symbol_name getSymbolName(const map<string, string>& memoMap) const;
+    //     string getOwnerAccount(const map<string, string>& memoMap) const;
+    //     string getActionMemo(const symbol_name& symbolName, const string& owner) const;
 
-        private:
-        string _getMemoValue(const string& key, const map<string, string>& memoMap) const;
-    };
+    //     private:
+    //     string _getMemoValue(const string& key, const map<string, string>& memoMap) const;
+    // };
 
     class Network : public contract {
         public:
@@ -50,11 +50,11 @@ namespace Dexlize {
         void convert(account_name from, asset quantity, string memo);
 
         private:
-        Aux aux;
-        map<uint64_t, vector<uint64_t>> mapContract2Symbol = {{N("tokendapppub"), {SN("PUB"), SN("TPT")}}};
+        // Aux aux;
+        // map<uint64_t, vector<uint64_t>> mapContract2Symbol = {{N("tokendapppub"), {SN("PUB"), SN("TPT")}}};
 
-        void _sendAction(account_name contract, account_name to, asset quantity, string actionStr, string memo);
-        bool _checkSymbol(account_name contractAccount, symbol_name symbolName);
+        // void _sendAction(account_name contract, account_name to, asset quantity, string actionStr, string memo);
+        // bool _checkSymbol(account_name contractAccount, symbol_name symbolName);
         asset _toAsset(const string& amount);
         bool _parseMemo(const map<string, string>& memo, asset& exchanged, asset& exchange, account_name& contract);
         bool _parseMemo(const map<string, string>& memoMap, uint64_t& id, account_name& contract);

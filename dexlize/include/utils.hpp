@@ -3,7 +3,10 @@
  *  @copyright defined in Dexlize/LICENSE
  */
 #pragma once
-
+#include <eosiolib/eosio.hpp>
+#include <eosiolib/asset.hpp>
+#include <eosiolib/action.hpp>
+#include <eosiolib/singleton.hpp>
 #include <string>
 #include <vector>
 #include <map>

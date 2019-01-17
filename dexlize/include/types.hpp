@@ -3,12 +3,7 @@
  *  @copyright defined in Dexlize/LICENSE
  */
 #pragma once
-#include <eosiolib/eosio.hpp>
-#include <eosiolib/asset.hpp>
-#include <eosiolib/action.hpp>
-#include <eosiolib/singleton.hpp>
-#include <vector>
-#include <string>
+#include "./utils.hpp"
 
 #define SN(X) (string_to_symbol(0, #X) >> 8)
 #define EOS_SYMBOL S(4, EOS)

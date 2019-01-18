@@ -3,8 +3,27 @@
 
 ### Usage (Resting the order of buy/sell and cancel the order of buy/sell)
 
+### Create order bought Example
+```js
+contract: dexlizenetwk
+action: create
+data: {
+    "from": "yourself",
+    "memo": {"type": "1", "exed": "10000.0000 ELE", "ex": "10.0000 EOS", "contract": "elementscoin"}
+}
+```
 
-### Resting order bought Example
+### Create order selled Example
+```js
+contract: dexlizenetwk
+action: create
+data: {
+    "from": "yourself",
+    "memo": {"type": "2", "exed": "10000.0000 ELE", "ex": "10.0000 EOS", "contract": "elementscoin"}
+}
+```
+
+### Active order bought Example
 you can add order bought by transfering the token of EOS, meanwhile the token need to be bought that 
 would be set in the memo. 
 
@@ -15,11 +34,11 @@ data: {
     "from": "yourself",
     "to": "dexlizenetwk",
     "quantity": "100.0000 EOS",
-    "memo": {"type": "0", "amount": "10000.0000", "symbol": "ELE", "contract": "elementscoin"}
+    "memo": {"type": "3", "id": "10001", "contract": "elementscoin"}
 }
 ```
 
-### Resting order selled Example
+### Active order selled Example
 you can add the order selled by transfering the token that want to be selled, meanwhile the eos token
 you want to be cost that would be set in the memo.
 
@@ -30,7 +49,7 @@ data: {
     "from": "yourself",
     "to": "dexlizenetwk"
     "quantity": "10000.0000 ELE",
-    "memo": {"type": "1", "amount": "10000.0000", "symbol": "EOS", "contract": "eosio.token"}
+    "memo": {"type": "4", "id": "10001", "contract": "elementscoin"}
 }
 ```
 
@@ -70,7 +89,7 @@ data: {
     "from": "yourself",
     "to": "dexlizenetwk"
     "quantity": "10000.0000 EOS",
-    "memo": {"type": "3", "id": "10001"}
+    "memo": {"type": "1", "id": "10001", "contract": "elementscoin"}
 }
 ```
 
@@ -84,7 +103,7 @@ data: {
     "from": "yourself",
     "to": "dexlizenetwk"
     "quantity": "10000.0000 ELE",
-    "memo": {"type": "4", "id": "10001"}
+    "memo": {"type": "1", "id": "10001", "contract": "elementscoin"}
 }
 ```
 

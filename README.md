@@ -90,6 +90,6 @@ data: {
 
 #### Describetion of type in the memo
  * type: 1, the action is the order bought of user
- * type: 2, the action is the order selled od user
+ * type: 2, the action is the order selled of user
  * type: 3, the action is that user want to buy token to cost eos in the order selled
  * type: 4, the action is that user want to get eos by costing token in the order bought

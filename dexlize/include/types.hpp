@@ -59,6 +59,7 @@ namespace Dexlize {
 
     // @abi table global i64
     struct st_global {
+        bool running;
         uint64_t sell_id;
         uint64_t buy_id;
 

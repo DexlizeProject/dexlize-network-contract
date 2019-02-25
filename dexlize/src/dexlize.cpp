@@ -210,7 +210,7 @@ void Dexlize::Network::apply(const account_name& code, const action_name& action
 
     if (code != _self || action == N(transfer)) return;
     switch (action) {
-        EOSIO_API(Dexlize::Network, (create)(cancel)(version));
+        EOSIO_API(Dexlize::Network, (create)(cancel)(version)(online)(offline));
         default:
         eosio_assert(false, "Not contract action cannot be accepted");
         break;
@@ -380,4 +380,18 @@ void Dexlize::Network::cancel(const account_name& from, const account_name& cont
         eosio_assert(buy_ptr != buys.end(), "the bought bill is not exist");
         buys.erase(buy_ptr);
     }
+}
+
+void Dexlize::Network::online() {
+    require_auth(from);
+
+    eosio_assert(!is_running(), "game is running");
+    set_game_status(true);
+}
+
+void Dexlize::Network::offline() {
+    require_auth(from);
+    
+    eosio_assert(is_running(), "game is already stop");
+    set_game_status(false);
 }

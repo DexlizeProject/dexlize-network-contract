@@ -37,6 +37,10 @@ namespace Dexlize {
         void sell(account_name from, account_name to, asset quantity, string memo);
         // @abi action
         void convert(account_name from, asset quantity, string memo);
+        // @abi action
+        void online();
+        // @abi action
+        void offline();
 
         private:
         asset _toAsset(const string& amount);
@@ -61,6 +65,23 @@ namespace Dexlize {
             global.buy_id += 1;
             _global.set(global, _self);
             return global.buy_id;
+        }
+
+        bool is_running() {
+            st_global global = _global.get_or_default(
+                st_global{.running = true, .sell_id = 0, .buy_id = 0});
+
+            _global.set(global, _self);
+            return global.running;
+        }
+
+        void set_game_status(bool running) {
+            st_global global = _global.get_or_default(
+                st_global{.running = true, .sell_id = 0, .buy_id = 0});
+            if (global.running != running) {
+                global.running = running;
+                _global.set(global, _self);
+            }
         }
 
         private:

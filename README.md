@@ -107,6 +107,24 @@ data: {
 }
 ```
 
+### Online the dexlize network
+You can online the dexlize network
+```js
+contract: dexlizenetwk
+action: online
+data: {
+}
+```
+
+### Offline the dexlize network
+You can offline the dexlize network when you need to maintain the dexlize network
+```js
+contract: dexlizenetwk
+action: offline
+data: {
+}
+```
+
 #### Describetion of type in the memo
  * type: 1, the action is the order bought of user
  * type: 2, the action is the order selled of user

@@ -38,9 +38,11 @@ namespace Dexlize {
         // @abi action
         void convert(account_name from, asset quantity, string memo);
         // @abi action
-        void online();
+        void start();
         // @abi action
-        void offline();
+        void pause();
+        // @abi action
+        void kill();
 
         private:
         asset _toAsset(const string& amount);

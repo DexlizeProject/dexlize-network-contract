@@ -210,7 +210,7 @@ void Dexlize::Network::apply(const account_name& code, const action_name& action
 
     if (code != _self || action == N(transfer)) return;
     switch (action) {
-        EOSIO_API(Dexlize::Network, (create)(cancel)(version)(online)(offline));
+        EOSIO_API(Dexlize::Network, (create)(cancel)(version)(start)(pause)(kill));
         default:
         eosio_assert(false, "Not contract action cannot be accepted");
         break;
@@ -227,6 +227,7 @@ void Dexlize::Network::apply(const account_name& code, const action_name& action
 void Dexlize::Network::create(const account_name& from, const string& memo) {
     require_auth(from);
 
+    eosio_assert(is_running(), "game is already stop");
     // parse the memo
     map<string, string> memoMap;
     eosio_assert(parseJson(memo, memoMap), "invalid memo format, the memo must be the format of json");
@@ -299,6 +300,7 @@ void Dexlize::Network::create(const account_name& from, const string& memo) {
 void Dexlize::Network::transfer(const account_name& from, const account_name& to, const extended_asset& quantity, const string& memo) {
     require_auth(from);
 
+    eosio_assert(is_running(), "game is already stop");
     // check the account of from and to
     if (from == _self && to != _self) return;
     eosio_assert(quantity.is_valid(), "invalid quantity");
@@ -382,16 +384,57 @@ void Dexlize::Network::cancel(const account_name& from, const account_name& cont
     }
 }
 
-void Dexlize::Network::online() {
-    require_auth(from);
+void Dexlize::Network::start() {
+    require_auth(_self);
 
     eosio_assert(!is_running(), "game is running");
     set_game_status(true);
 }
 
-void Dexlize::Network::offline() {
-    require_auth(from);
+void Dexlize::Network::pause() {
+    require_auth(_self);
     
     eosio_assert(is_running(), "game is already stop");
     set_game_status(false);
+}
+
+void Dexlize::Network::kill() {
+    require_auth(_self);
+
+    eosio_assert(!is_running(), "game is running");
+    tb_sells sells(_self, contract);
+    tb_buys buys(_self, contract);
+    for (auto contract_ptr = _global.contracts.begin(); contract_ptr != _global.contracts.end(); ++contract_ptr) {
+        tb_sells sells(_self, *contract_ptr);
+        for (auto order_ptr = sells.begin(); order_ptr = sells.end(); ++order_ptr) {
+            if (order_ptr->actived) {
+                action(permission_level{_self, N(active)},
+                    order_ptr->exchanged.contract,
+                    N(transfer),
+                    make_tuple(_self,
+                                order_ptr->name,
+                                order_ptr->exchanged.amount,
+                                string("return the remaining token of order"))).send();
+            }
+        }
+        for (auto order_ptr = sells.begin(); order_ptr = sells.end(); ++order_ptr) {
+            sells.erase(order_ptr);
+        }
+
+        tb_buys buys(_self, *contract_ptr);
+        for (auto order_ptr = buys.begin(); order_ptr = buys.end(); ++order_ptr) {
+            if (order_ptr->actived) {
+                action(permission_level{_self, N(active)},
+                    order_ptr->exchanged.contract,
+                    N(transfer),
+                    make_tuple(_self,
+                                order_ptr->name,
+                                order_ptr->exchanged.amount,
+                                string("return the remaining token of order"))).send();
+            }
+        }
+        for (auto order_ptr = buys.begin(); order_ptr = buys.end(); ++order_ptr) {
+            buys.erase(order_ptr);
+        }
+    }
 }

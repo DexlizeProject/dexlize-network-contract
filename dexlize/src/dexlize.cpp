@@ -367,6 +367,15 @@ void Dexlize::Network::cancel(const account_name& from, const account_name& cont
         tb_sells sells(_self, contract);
         auto sell_ptr = sells.find(id);
         eosio_assert(sell_ptr != sells.end(), "the selled bill is not exist");
+        if (sell_ptr->actived) {
+            action(permission_level{_self, N(active)},
+                sell_ptr->exchanged.contract,
+                N(transfer),
+                make_tuple(_self,
+                            sell_ptr->name,
+                            sell_ptr->exchanged.amount,
+                            string("return the remaining token of order"))).send();
+        }
         sells.erase(sell_ptr);
     } else if (type_ptr->second == "3") {
         // remove the bought bill id of current account
@@ -380,6 +389,15 @@ void Dexlize::Network::cancel(const account_name& from, const account_name& cont
         tb_buys buys(_self, contract);
         auto buy_ptr = buys.find(id);
         eosio_assert(buy_ptr != buys.end(), "the bought bill is not exist");
+        if (buy_ptr->actived) {
+            action(permission_level{_self, N(active)},
+                buy_ptr->exchanged.contract,
+                N(transfer),
+                make_tuple(_self,
+                            buy_ptr->name,
+                            buy_ptr->exchanged.amount,
+                            string("return the remaining token of order"))).send();
+        }
         buys.erase(buy_ptr);
     }
 }
@@ -419,6 +437,12 @@ void Dexlize::Network::kill() {
         }
         for (auto order_ptr = sells.begin(); order_ptr = sells.end(); ++order_ptr) {
             sells.erase(order_ptr);
+            // remove the selled bill id of current account
+            auto bill_ptr = find(iter->sells.begin(), iter->sells.end(), order_ptr->id);
+            eosio_assert(bill_ptr != iter->sells.end(), "the bill id is not exist in the sell bills of current account");
+            accounts.modify(iter, 0, [&](auto& a) {
+                a.sells.erase(bill_ptr);
+            });
         }
 
         tb_buys buys(_self, *contract_ptr);
@@ -435,6 +459,12 @@ void Dexlize::Network::kill() {
         }
         for (auto order_ptr = buys.begin(); order_ptr = buys.end(); ++order_ptr) {
             buys.erase(order_ptr);
+            // remove the bought bill id of current account
+            auto bill_ptr = find(iter->buys.begin(), iter->buys.end(), order_ptr->id);
+            eosio_assert(bill_ptr != iter->buys.end(), "the bill id is not exist in the buy bills of current account");
+            accounts.modify(iter, 0, [&](auto& a) {
+                a.buys.erase(bill_ptr);
+            });
         }
     }
 }

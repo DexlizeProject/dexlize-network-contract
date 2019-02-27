@@ -50,9 +50,10 @@ void Dexlize::Network::_sell(const account_name& from, const extended_asset& qua
     auto buy_ptr = buys.find(id);
     eosio_assert(buy_ptr != buys.end(), "the buy order is not exist");
     eosio_assert((buy_ptr->exchanged - quantity).amount >= 0, "the quantity brought must be less than amount of order");
-    int64_t sell_amount(static_cast<double>(quantity.amount) / static_cast<double>(buy_ptr->exchanged.amount) * buy_ptr->exchange.amount);
+    auto fee = quantity.amount * get_taker_ratio() / 1000;
+    int64_t sell_amount(static_cast<double>(quantity.amount - fee) / static_cast<double>(buy_ptr->exchanged.amount) * buy_ptr->exchange.amount);
 
-    if (buy_ptr->exchanged.amount == quantity.amount) {
+    if (buy_ptr->exchanged.amount == (quantity.amount - fee)) {
         buys.erase(buy_ptr);
         tb_accounts accounts(_self, from);
         auto acc_ptr = accounts.find(buy_ptr->name);
@@ -63,7 +64,7 @@ void Dexlize::Network::_sell(const account_name& from, const extended_asset& qua
         });
     } else {
         buys.modify(buy_ptr, 0, [&](auto& a) {
-            a.exchanged -= quantity;
+            a.exchanged -= asset(quantity.amount - fee, quantity.symbol);
             a.exchange.amount -= sell_amount;
         });
     }
@@ -76,7 +77,7 @@ void Dexlize::Network::_sell(const account_name& from, const extended_asset& qua
     action(permission_level{_self, N(active)},
         buy_ptr->exchanged.contract,
         N(transfer),
-        make_tuple(_self, buy_ptr->name, asset(quantity.amount, buy_ptr->exchanged.symbol), string("buy token, exchange: dexlize network"))).send();
+        make_tuple(_self, buy_ptr->name, asset(quantity.amount - fee, buy_ptr->exchanged.symbol), string("buy token, exchange: dexlize network"))).send();
 }
 
 void Dexlize::Network::_buy(const account_name& from, const extended_asset& quantity, const account_name& contract, uint64_t id) {
@@ -84,8 +85,9 @@ void Dexlize::Network::_buy(const account_name& from, const extended_asset& quan
     auto sell_ptr = sells.find(id);
     eosio_assert(sell_ptr != sells.end(), "the sell order is not exist");
     eosio_assert((sell_ptr->exchange - quantity).amount >= 0, "the quantity selled must be less than amount of order");
-    int64_t sell_amount(static_cast<double>(quantity.amount) / static_cast<double>(sell_ptr->exchange.amount) * sell_ptr->exchanged.amount);
-    if (sell_ptr->exchange.amount == quantity.amount) {
+    auto fee = quantity.amount * get_taker_ratio() / 1000;
+    int64_t sell_amount(static_cast<double>(quantity.amount - fee) / static_cast<double>(sell_ptr->exchange.amount) * sell_ptr->exchanged.amount);
+    if (sell_ptr->exchange.amount == (quantity.amount - fee)) {
         sells.erase(sell_ptr);
         tb_accounts accounts(_self, from);
         auto acc_ptr = accounts.find(sell_ptr->exchanged.contract);
@@ -98,7 +100,7 @@ void Dexlize::Network::_buy(const account_name& from, const extended_asset& quan
     } else {
         sells.modify(sell_ptr, 0, [&](auto& a) {
             a.exchanged.amount -= sell_amount;
-            a.exchange -= quantity;
+            a.exchange -= asset(quantity.amount - fee, quantity.symbol);
         });
     }
 
@@ -110,14 +112,15 @@ void Dexlize::Network::_buy(const account_name& from, const extended_asset& quan
     action(permission_level{_self, N(active)},
         sell_ptr->exchange.contract,
         N(transfer),
-        make_tuple(_self, sell_ptr->name, asset(quantity.amount, sell_ptr->exchange.symbol), string("sell token, exchange: dexlize network"))).send();
+        make_tuple(_self, sell_ptr->name, asset(quantity.amount - fee, sell_ptr->exchange.symbol), string("sell token, exchange: dexlize network"))).send();
 }
 
 void Dexlize::Network::_activeSellOrder(const extended_asset& quantity, const account_name& contract, uint64_t id) {
     tb_sells sells(_self, contract);
     auto sell_ptr = sells.find(id);
     eosio_assert(sell_ptr != sells.end(), "current sell order is not exist");
-    eosio_assert(sell_ptr->exchanged == quantity, "transfer quantity must be equal with exchanged quantity");
+    auto fee = quantity.amount * get_maker_ratio() / 1000;
+    eosio_assert(sell_ptr->exchanged.amount == (quantity.amount - fee), "transfer quantity must be equal with exchanged quantity");
     sells.modify(sell_ptr, 0, [&](auto& a) {
         a.actived = true;
     });
@@ -129,7 +132,8 @@ void Dexlize::Network::_activeBuyOrder(const extended_asset& quantity, const acc
     tb_buys buys(_self, contract);
     auto buy_ptr = buys.find(id);
     eosio_assert(buy_ptr != buys.end(), "current buy order is not exist");
-    eosio_assert(buy_ptr->exchange == quantity, "transfer quantity must be equal with exchange quantity");
+    auto fee = quantity.amount * get_maker_ratio() / 1000;
+    eosio_assert(buy_ptr->exchange.amount == (quantity.amount - fee), "transfer quantity must be equal with exchange quantity");
     buys.modify(buy_ptr, 0, [&](auto& a) {
         a.actived = true;
     });
@@ -246,6 +250,12 @@ void Dexlize::Network::create(const account_name& from, const string& memo) {
         });
     }
 
+    // add contract
+    auto contract_ptr = find(_global.contracts.begin(), _global.contracts.end(), contract);
+    if (contract_ptr == _global.contracts.end()) {
+        _global.contracts.emplace_back(contract);
+    }
+
     // create order of selled/bought
     if (type_ptr->second == "1") {
         uint64_t buy_id = _next_buy_id();
@@ -321,16 +331,16 @@ void Dexlize::Network::transfer(const account_name& from, const account_name& to
     switch (type)
     {
         case 1:
-            _activeBuyOrder(quantity, contract, id);
+            _activeBuyOrder(quantity - fee, contract, id);
             break;
         case 2:
-            _activeSellOrder(quantity, contract, id);
+            _activeSellOrder(quantity - fee, contract, id);
             break;
         case 3:
-            _buy(from, quantity, contract, id);
+            _buy(from, quantity - fee, contract, id);
             break;
         case 4:
-            _sell(from, quantity, contract, id);
+            _sell(from, quantity - fee, contract, id);
             break;
         default:
             break;
@@ -431,7 +441,7 @@ void Dexlize::Network::kill() {
                     N(transfer),
                     make_tuple(_self,
                                 order_ptr->name,
-                                order_ptr->exchanged.amount,
+                                asset(order_ptr->exchanged.amount, order_ptr->exchanged.symbol),
                                 string("return the remaining token of order"))).send();
             }
         }
@@ -449,11 +459,11 @@ void Dexlize::Network::kill() {
         for (auto order_ptr = buys.begin(); order_ptr = buys.end(); ++order_ptr) {
             if (order_ptr->actived) {
                 action(permission_level{_self, N(active)},
-                    order_ptr->exchanged.contract,
+                    order_ptr->exchange.contract,
                     N(transfer),
                     make_tuple(_self,
                                 order_ptr->name,
-                                order_ptr->exchanged.amount,
+                                asset(order_ptr->exchange.amount, order_ptr->exchange.symbol),
                                 string("return the remaining token of order"))).send();
             }
         }

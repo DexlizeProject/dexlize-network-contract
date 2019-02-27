@@ -62,6 +62,8 @@ namespace Dexlize {
         bool running;
         uint64_t sell_id;
         uint64_t buy_id;
+        int maker_ratio; // 0.1% equal with 1
+        int taker_ratio; // 0.1% equal with 1
         vector<account_name> contracts;
 
         uint64_t primary_key() const {return sell_id;}

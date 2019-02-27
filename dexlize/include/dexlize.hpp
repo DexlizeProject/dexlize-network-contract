@@ -85,7 +85,23 @@ namespace Dexlize {
                 _global.set(global, _self);
             }
         }
+        
+        int get_maker_ratio() {
+            st_global global = _global.get_or_default(
+                st_global{.running = true, .sell_id = 0, .buy_id = 0, maker_ratio = 1, taker_ratio = 2});
 
+            _global.set(global, _self);
+            return _global.maker_ratio;
+        }
+
+        int get_taker_ratio() {
+            st_global global = _global.get_or_default(
+                st_global{.running = true, .sell_id = 0, .buy_id = 0, maker_ratio = 1, taker_ratio = 2});
+
+            _global.set(global, _self);
+            return _global.taker_ratio;
+        }
+        
         private:
         global _global;
     };

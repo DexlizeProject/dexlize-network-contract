@@ -77,7 +77,7 @@ namespace Dexlize {
             return global.running;
         }
 
-        void set_game_status(bool running) {
+        void set_network_status(bool running) {
             st_global global = _global.get_or_default(
                 st_global{.running = true, .sell_id = 0, .buy_id = 0});
             if (global.running != running) {

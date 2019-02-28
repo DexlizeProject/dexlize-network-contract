@@ -415,21 +415,21 @@ void Dexlize::Network::cancel(const account_name& from, const account_name& cont
 void Dexlize::Network::start() {
     require_auth(_self);
 
-    eosio_assert(!is_running(), "game is running");
-    set_game_status(true);
+    eosio_assert(!is_running(), "network is running");
+    set_network_status(true);
 }
 
 void Dexlize::Network::pause() {
     require_auth(_self);
     
-    eosio_assert(is_running(), "game is already stop");
-    set_game_status(false);
+    eosio_assert(is_running(), "network is already stop");
+    set_network_status(false);
 }
 
 void Dexlize::Network::kill() {
     require_auth(_self);
 
-    eosio_assert(!is_running(), "game is running");
+    eosio_assert(!is_running(), "network is running");
     tb_sells sells(_self, contract);
     tb_buys buys(_self, contract);
     for (auto contract_ptr = _global.contracts.begin(); contract_ptr != _global.contracts.end(); ++contract_ptr) {

@@ -46,7 +46,7 @@ namespace Dexlize {
 
         private:
         asset _toAsset(const string& amount);
-        bool _parseMemo(const map<string, string>& memo, asset& exchanged, asset& exchange, account_name& contract);
+        bool _parseMemo(const map<string, string>& memo, uint64_t& id asset& exchanged, asset& exchange, account_name& contract);
         bool _parseMemo(const map<string, string>& memoMap, uint64_t& id, account_name& contract);
         void _sell(const account_name& from, const extended_asset& quantity, const account_name& contract, uint64_t id);
         void _buy(const account_name& from, const extended_asset& quantity, const account_name& contract, uint64_t id);
@@ -101,7 +101,29 @@ namespace Dexlize {
             _global.set(global, _self);
             return _global.taker_ratio;
         }
-        
+
+        uint64_t stringToInt(const string& str) {
+            uint64_t value;
+            if( str.size() > 64 ) {
+                eosio_assert( false, "string is too long to be a valid id" );
+            }
+
+            auto n = std::min( str.size(), 12u );
+            for( decltype(n) i = 0; i < n; ++i ) {
+                value <<= 5;
+                value |= char_to_value( str[i] );
+            }
+            value <<= ( 4 + 5*(12 - n) );
+            if( str.size() == 64 ) {
+                uint64_t v = char_to_value( str[12] );
+                if( v > 0x0Full ) {
+                eosio_assert(false, "thirteenth character in id cannot be a letter that comes after j");
+                }
+                value |= v;
+            }
+
+            return value;
+        }
         private:
         global _global;
     };

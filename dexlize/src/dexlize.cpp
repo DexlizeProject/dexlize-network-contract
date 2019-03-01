@@ -18,7 +18,7 @@ bool Dexlize::Network::_parseMemo(const map<string, string>& memoMap, uint64_t& 
 
     auto id_ptr = memoMap.find("id");
     eosio_assert(id_ptr != memoMap.end(), "must set order id in the memo when buying or selling");
-    id = stoi(id_ptr->second);
+    id = stringToInt(id_ptr->second);
 
     auto contract_ptr = memoMap.find("contract");
     eosio_assert(contract_ptr != memoMap.end(), "must set the contract in the memo");
@@ -27,12 +27,16 @@ bool Dexlize::Network::_parseMemo(const map<string, string>& memoMap, uint64_t& 
     return true;
 }
 
-bool Dexlize::Network::_parseMemo(const map<string, string>& memoMap, asset& exchanged, asset& exchange, account_name& contract) {
+bool Dexlize::Network::_parseMemo(const map<string, string>& memoMap, uint64_t& id, asset& exchanged, asset& exchange, account_name& contract) {
     bool reVal = false;
 
     auto exchanged_ptr = memoMap.find("exed");
     eosio_assert(exchanged_ptr != memoMap.end(), "must set the token asset exchanged in the memo");
     exchanged = _toAsset(exchanged_ptr->second);
+
+    auto id_ptr = memoMap.find("id");
+    eosio_assert(id_ptr != memoMap.end(), "must set order id in the memo when buying or selling");
+    id = stringToInt(id_ptr->second);
 
     auto exchange_ptr = memoMap.find("ex");
     eosio_assert(exchange_ptr != memoMap.end(), "must set the EOS asset exchange in the memo");
@@ -225,8 +229,8 @@ void Dexlize::Network::apply(const account_name& code, const action_name& action
 /**
  * function: user can create order of bought/selled by this function
  * parameter: token - should set the contract address of order e.g "elementscoin"
- *            memo - json format e.g. {"type": "1", "exed": "10000.0000 ELE", "ex": "10.0000 EOS", "contract": "elementscoin"}
- *                                    {"type": "2", "exed": "10000.0000 ELE", "ex": "10.0000 EOS", "contract": "elementscoin"}
+ *            memo - json format e.g. {"type": "1", "id": "10012", "exed": "10000.0000 ELE", "ex": "10.0000 EOS", "contract": "elementscoin"}
+ *                                    {"type": "2", "id": "10012", "exed": "10000.0000 ELE", "ex": "10.0000 EOS", "contract": "elementscoin"}
  **/
 void Dexlize::Network::create(const account_name& from, const string& memo) {
     require_auth(from);
@@ -239,7 +243,8 @@ void Dexlize::Network::create(const account_name& from, const string& memo) {
     eosio_assert(type_ptr != memoMap.end(), "must set type of bill in the memo");
     asset exchanged, exchange;
     account_name contract;
-    _parseMemo(memoMap, exchanged, exchange, contract);
+    uint64_t id;
+    _parseMemo(memoMap, id, exchanged, exchange, contract);
 
     // create current account
     tb_accounts accounts(_self, from);
@@ -258,7 +263,7 @@ void Dexlize::Network::create(const account_name& from, const string& memo) {
 
     // create order of selled/bought
     if (type_ptr->second == "1") {
-        uint64_t buy_id = _next_buy_id();
+        uint64_t buy_id = id;
         tb_buys buys(_self, contract);
         auto buy_ptr = buys.find(buy_id);
         if (buy_ptr == buys.end()) {
@@ -276,7 +281,7 @@ void Dexlize::Network::create(const account_name& from, const string& memo) {
             a.buys.emplace_back(buy_id);
         });
     } else {
-        uint64_t sell_id = _next_sell_id();
+        uint64_t sell_id = id;
         tb_sells sells(_self, contract);
         auto sell_ptr = sells.find(sell_id);
         if (sell_ptr == sells.end()) {

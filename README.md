@@ -9,7 +9,7 @@ contract: dexlizenetwk
 action: create
 data: {
     "from": "yourself",
-    "memo": {"type": "1", "exed": "10000.0000 ELE", "ex": "10.0000 EOS", "contract": "elementscoin"}
+    "memo": {"type": "1", "id": "10012", "exed": "10000.0000 ELE", "ex": "10.0000 EOS", "contract": "elementscoin"}
 }
 ```
 
@@ -19,7 +19,7 @@ contract: dexlizenetwk
 action: create
 data: {
     "from": "yourself",
-    "memo": {"type": "2", "exed": "10000.0000 ELE", "ex": "10.0000 EOS", "contract": "elementscoin"}
+    "memo": {"type": "2", "id": "10012", "exed": "10000.0000 ELE", "ex": "10.0000 EOS", "contract": "elementscoin"}
 }
 ```
 
